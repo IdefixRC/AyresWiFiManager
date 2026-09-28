@@ -143,10 +143,13 @@
  *
  *  CHANGELOG (Semantic Versioning)
  *  ---------------------------------------------------------------------------
+ *  2.3.1  (2026-09-28) MAC-based device naming helpers; Task WDT uses the
+ *                      ESP-IDF v5 API on Arduino-ESP32 core 3.x.
  *  2.3.0  (2026-08-07) ESP32-only release; unified connectivity state and
  *                      diagnostics; logger and documentation cleanup.
  *  2.2.0  (2025) NTP with rotation/timeouts; ESP32 HTTP Date fallback; TZ
- * "UTC0". 2.1.0  (2025) ESP32 moved to FreeRTOS ticks/vTaskDelay and esp_timer.
+ *                "UTC0".
+ *  2.1.0  (2025) ESP32 moved to FreeRTOS ticks/vTaskDelay and esp_timer.
  *  2.0.x  (2024-2025) Fallback policies; reconnect tuning; JSON whitelist;
  *                     external AP support.
  *
@@ -172,7 +175,7 @@
 #include <WiFi.h>
 #include <esp_timer.h>
 #else
-#error "AyresWiFiManager 2.3.0 supports ESP32 only"
+#error "AyresWiFiManager supports ESP32 only"
 #endif
 
 #include <DNSServer.h>
