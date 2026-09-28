@@ -5,47 +5,67 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
-  build:
+  portal-assets:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Cache pip
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    - name: Cache PlatformIO
-      uses: actions/cache@v4
-      with:
-        path: ~/.platformio
-        key: ${{ runner.os }}-platformio-${{ hashFiles('**/platformio.ini') }}
-        restore-keys: |
-          ${{ runner.os }}-platformio-
+    - uses: actions/checkout@v7
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: '3.12'
+
+    - name: Verify embedded portal assets
+      run: python tools/check_portal_assets.py
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        core:
+          # Registry espressif32: Arduino-ESP32 core 2.x (ESP-IDF v4).
+          - name: core2
+            platform: espressif32
+          # pioarduino: Arduino-ESP32 core 3.3.11 (ESP-IDF v5).
+          - name: core3
+            platform: https://github.com/pioarduino/platform-espressif32/releases/download/55.03.311/platform-espressif32.zip
+        example:
+          - examples/Arduino/example.ino
+          - examples/PlatformIO/main.cpp
+
+    name: build (${{ matrix.core.name }}, ${{ matrix.example }})
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Cache PlatformIO
+      uses: actions/cache@v6
+      with:
+        path: ~/.platformio
+        key: ${{ runner.os }}-platformio-${{ matrix.core.name }}-${{ hashFiles('library.json') }}
+        restore-keys: |
+          ${{ runner.os }}-platformio-${{ matrix.core.name }}-
+
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: '3.12'
+        cache: pip
+        cache-dependency-path: .github/workflows/ci.yml
 
     - name: Install PlatformIO
       run: |
         python -m pip install --upgrade pip
         pip install platformio
 
-    - name: Verify embedded portal assets
-      run: python ayres_gzip.py data/index.html data/success.html data/error.html -o src/AWM_html_gz.h --check
-
-    - name: Build minimal example for ESP32
-      run: pio ci examples/AWM_Minimal/AWM_Minimal.ino --lib=. --board=esp32dev
-
-    - name: Build advanced example for ESP32
-      run: pio ci examples/AWM_Advanced/AWM_Advanced.ino --lib=. --board=esp32dev
-
-
+    - name: Build ${{ matrix.example }}
+      run: >
+        pio ci ${{ matrix.example }}
+        --lib=.
+        --board=esp32dev
+        --project-option="platform=${{ matrix.core.platform }}"
