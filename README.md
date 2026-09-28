@@ -5,6 +5,8 @@
 [![Arduino](https://img.shields.io/badge/framework-Arduino-00979d?logo=arduino)](https://www.arduino.cc/)
 [![License](https://img.shields.io/badge/license-MIT-6c757d)](LICENSE)
 
+> **This is a fork.** [IdefixRC](https://github.com/IdefixRC) maintains it to keep AyresWiFiManager current with recent Arduino-ESP32 cores and to add what our own projects need, starting with [Monitor-Buddy](https://github.com/IdefixRC/Monitor-Buddy). The original library is [ayresnet/AyresWiFiManager](https://github.com/ayresnet/AyresWiFiManager), and the credit for it belongs to its author. We offer our changes back to the original author as pull requests, so the fixes end up where everyone can use them. If you build on Arduino-ESP32 core 3.x, this fork may carry fixes that upstream has not merged yet.
+
 AyresWiFiManager (AWM) is an ESP32 library for Wi-Fi provisioning and connectivity management. It combines a captive portal, LittleFS credential storage, explicit fallback policies, reconnection control, NTP synchronization and field diagnostics behind a small Arduino-friendly API.
 
 [Leer en español](README.es.md)
