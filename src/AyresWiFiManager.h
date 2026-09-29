@@ -143,6 +143,8 @@
  *
  *  CHANGELOG (Semantic Versioning)
  *  ---------------------------------------------------------------------------
+ *  2.3.2  (2026-09-29) Security: the portal shows scanned SSIDs as text, so a
+ *                      network name can no longer inject HTML or script.
  *  2.3.1  (2026-09-28) MAC-based device naming helpers; Task WDT uses the
  *                      ESP-IDF v5 API on Arduino-ESP32 core 3.x.
  *  2.3.0  (2026-08-07) ESP32-only release; unified connectivity state and
@@ -163,10 +165,10 @@
 #define AYRES_WIFI_MANAGER_H
 
 // ===== Versioning (public) =====
-#define AWM_VERSION "2.3.1"
+#define AWM_VERSION "2.3.2"
 #define AWM_VERSION_MAJOR 2
 #define AWM_VERSION_MINOR 3
-#define AWM_VERSION_PATCH 1
+#define AWM_VERSION_PATCH 2
 
 #include <Arduino.h>
 
