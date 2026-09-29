@@ -723,6 +723,96 @@
   </div>
 
   <script>
+    /* i18n-core:begin */
+    // Shared portal i18n helpers. This block is identical in index.html,
+    // success.html and error.html; tools/check_i18n.py enforces that.
+    var AWMI18n = (function () {
+      'use strict';
+      var has = function (obj, key) { return Object.prototype.hasOwnProperty.call(obj, key); };
+
+      // "de-CH" -> "de", "EN_us" -> "en"
+      function primary(tag) {
+        return String(tag || '').trim().toLowerCase().split(/[-_]/)[0];
+      }
+
+      // First browser language the portal supports, otherwise English.
+      function pickBrowser(supported, browserLangs) {
+        var list = browserLangs || [];
+        for (var i = 0; i < list.length; i++) {
+          var code = primary(list[i]);
+          if (supported.indexOf(code) !== -1) return code;
+        }
+        return supported.indexOf('en') !== -1 ? 'en' : supported[0];
+      }
+
+      // Order: ?lang (when allowed), then the configured language, then AUTO.
+      function resolve(o) {
+        var url = primary(o.urlLang);
+        if (o.urlAllowed && url && o.supported.indexOf(url) !== -1) return url;
+        var configured = primary(o.configured);
+        if (configured && configured !== 'auto' && o.supported.indexOf(configured) !== -1) return configured;
+        return pickBrowser(o.supported, o.browserLangs);
+      }
+
+      function format(text, vars) {
+        return String(text).replace(/\{(\w+)\}/g, function (match, name) {
+          return vars && has(vars, name) ? String(vars[name]) : match;
+        });
+      }
+
+      // Current language, then English, then the key itself. Never blank.
+      function lookup(tables, lang, key) {
+        if (tables[lang] && has(tables[lang], key)) return tables[lang][key];
+        if (tables.en && has(tables.en, key)) return tables.en[key];
+        return key;
+      }
+
+      function browserLangs(nav) {
+        if (!nav) return [];
+        if (nav.languages && nav.languages.length) return Array.prototype.slice.call(nav.languages);
+        return nav.language ? [nav.language] : [];
+      }
+
+      // data-i18n-html uses innerHTML: only our own table text and escaped vars go there.
+      function apply(doc, tables, lang, vars) {
+        var text = function (key) { return format(lookup(tables, lang, key), vars); };
+        doc.querySelectorAll('[data-i18n]').forEach(function (el) {
+          el.textContent = text(el.getAttribute('data-i18n'));
+        });
+        doc.querySelectorAll('[data-i18n-html]').forEach(function (el) {
+          el.innerHTML = text(el.getAttribute('data-i18n-html'));
+        });
+        [['data-i18n-placeholder', 'placeholder'], ['data-i18n-title', 'title'],
+         ['data-i18n-aria-label', 'aria-label']].forEach(function (pair) {
+          doc.querySelectorAll('[' + pair[0] + ']').forEach(function (el) {
+            el.setAttribute(pair[1], text(el.getAttribute(pair[0])));
+          });
+        });
+        doc.documentElement.lang = lang;
+      }
+
+      // One option per table, in table order, labelled with the language's own name.
+      function fillSelect(select, tables, lang) {
+        select.textContent = '';
+        Object.keys(tables).forEach(function (code) {
+          var option = select.ownerDocument.createElement('option');
+          option.value = code;
+          option.lang = code;
+          option.textContent = (tables[code] && tables[code]._name) || code;
+          option.selected = code === lang;
+          select.appendChild(option);
+        });
+      }
+
+      return {
+        primary: primary, pickBrowser: pickBrowser, resolve: resolve, format: format,
+        lookup: lookup, browserLangs: browserLangs, apply: apply, fillSelect: fillSelect
+      };
+    })();
+    /* i18n-core:end */
+  </script>
+
+  <script>
     (function () {
       // SIN hardcode: la versión real viene del firmware via /info
       let VERSION = null;
