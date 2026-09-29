@@ -215,12 +215,39 @@ static bool AWM_syncTimeFromHttp_(const char *url, uint32_t timeoutMs = 6000) {
 AyresWiFiManager::AyresWiFiManager(uint8_t ledPin_, uint8_t buttonPin_)
     : server(80), ledPin(ledPin_), buttonPin(buttonPin_) {}
 
+namespace {
+// Code reported to the portal pages in /info.
+const char *languageCode(AyresWiFiManager::Language lang) {
+  switch (lang) {
+  case AyresWiFiManager::Language::EN:
+    return "en";
+  case AyresWiFiManager::Language::ES:
+    return "es";
+  case AyresWiFiManager::Language::DE:
+    return "de";
+  default:
+    return "auto";
+  }
+}
+} // namespace
+
 /* ============================= SETTERS / TOGGLES =============================
  */
 void AyresWiFiManager::setHtmlPathPrefix(const String &prefix) {
   htmlPathPrefix = prefix.endsWith("/") ? prefix : prefix + "/";
 }
 void AyresWiFiManager::setHostname(const String &host) { hostname = host; }
+
+void AyresWiFiManager::setLanguage(Language lang) { portalLanguage = lang; }
+AyresWiFiManager::Language AyresWiFiManager::getLanguage() const {
+  return portalLanguage;
+}
+void AyresWiFiManager::setLanguageSwitcher(bool enabled) {
+  languageSwitcher = enabled;
+}
+bool AyresWiFiManager::isLanguageSwitcherEnabled() const {
+  return languageSwitcher;
+}
 void AyresWiFiManager::setAPCredentials(const String &ssid_,
                                         const String &pass_) {
   apSSID = ssid_;
@@ -815,7 +842,7 @@ void AyresWiFiManager::setupHTTPRoutes() {
       apIp = apIP.toString();
 
     String json;
-    json.reserve(192);
+    json.reserve(256);
     json = F("{\"name\":\"AyresWiFiManager\"");
     json += F(",\"version\":\"");
     json += AyresWiFiManager::versionString();
@@ -831,6 +858,11 @@ void AyresWiFiManager::setupHTTPRoutes() {
     json += F(",\"ap_ip\":\"");
     json += apIp;
     json += '"';
+    json += F(",\"lang\":\"");
+    json += languageCode(portalLanguage);
+    json += '"';
+    json += F(",\"lang_switch\":");
+    json += languageSwitcher ? F("true") : F("false");
     json += '}';
 
     server.send(200, "application/json", json);
@@ -1013,7 +1045,7 @@ void AyresWiFiManager::handleSave() {
     restartPortalTimeout();
 
   if (server.method() != HTTP_POST) {
-    server.send(405, "text/plain", "Método no permitido");
+    server.send(405, "text/plain", "Method not allowed");
     return;
   }
 
@@ -1051,7 +1083,7 @@ void AyresWiFiManager::handleErase() {
     restartPortalTimeout();
 
   if (server.method() != HTTP_POST) {
-    server.send(405, "text/plain", "Método no permitido");
+    server.send(405, "text/plain", "Method not allowed");
     return;
   }
 

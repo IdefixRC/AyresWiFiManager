@@ -47,6 +47,11 @@ void setup() {
   // Configure the device hostname and the temporary setup access point.
   wifiManager.setHostname("awm-test");
   wifiManager.setAPCredentials("AWM-Setup", "12345678");
+  // Portal language: AUTO follows the phone's language (English fallback);
+  // EN, ES or DE sets the starting language.
+  wifiManager.setLanguage(AyresWiFiManager::Language::AUTO);
+  // true shows the language menu on the portal pages; false locks the language.
+  wifiManager.setLanguageSwitcher(true);
   // Enable the captive portal and stop waiting after five minutes.
   wifiManager.setCaptivePortal(true);
   wifiManager.setPortalTimeout(300);

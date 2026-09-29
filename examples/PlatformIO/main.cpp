@@ -48,6 +48,11 @@ void setup() {
   wifiManager.setHostname(String("awm-test-") + macSuffix);
   wifiManager.setAPCredentials(String("AWM-Setup-") + macSuffix, "12345678");
   AWM_LOGI("MAC Station: %s", AyresWiFiManager::getMacAddress().c_str());
+  // Portal language: AUTO follows the phone's language (English fallback);
+  // EN, ES or DE sets the starting language.
+  wifiManager.setLanguage(AyresWiFiManager::Language::AUTO);
+  // true shows the language menu on the portal pages; false locks the language.
+  wifiManager.setLanguageSwitcher(true);
   // Enable the captive portal and stop waiting after five minutes.
   wifiManager.setCaptivePortal(true);
   wifiManager.setPortalTimeout(300);

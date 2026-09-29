@@ -58,6 +58,9 @@
  *  --------------------------------
  *  setAPCredentials(ssid, pass) → Define SSID/clave del AP de configuración.
  *  setHostname(host)           → Nombre mDNS y hostname del dispositivo.
+ *  setLanguage(lang)           → Portal language: AUTO (browser, English
+ *                                fallback), EN, ES or DE. Default: AUTO.
+ *  setLanguageSwitcher(bool)   → Show the portal's language menu. Default: true.
  *  setHtmlPathPrefix("/ui/")   → Prefijo para servir UI desde LittleFS (ej:
  * "/awm/"). setCaptivePortal(bool)      → Activa/desactiva redirección cautiva
  * (por defecto: true). setPortalTimeout(seconds)   → Cierra portal tras N
@@ -238,6 +241,9 @@ public:
     ENCRYPTION_ERROR
   };
 
+  // Portal language. AUTO follows the browser and falls back to English.
+  enum class Language : uint8_t { AUTO, EN, ES, DE };
+
   // ---------- ctor ----------
   AyresWiFiManager(uint8_t ledPin = 2, uint8_t buttonPin = 0);
 
@@ -263,6 +269,13 @@ public:
   void setPortalTimeout(uint32_t seconds);
   void setAPClientCheck(bool enabled);
   void setWebClientCheck(bool enabled);
+
+  // Portal language (default AUTO) and whether the portal pages show their
+  // language menu (default true). The pages read both from /info.
+  void setLanguage(Language lang);
+  Language getLanguage() const;
+  void setLanguageSwitcher(bool enabled);
+  bool isLanguageSwitcherEnabled() const;
   void openPortal();
   void closePortal();
   bool isPortalActive() const;
@@ -374,6 +387,8 @@ private:
   // credenciales y HTML
   String ssid, password;
   String htmlPathPrefix = "/";
+  Language portalLanguage = Language::AUTO;
+  bool languageSwitcher = true;
 
   // servidor / dns
   WebServer server{80};
