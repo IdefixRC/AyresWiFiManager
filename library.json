@@ -1,6 +1,6 @@
 {
   "name": "AyresWiFiManager",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Wi-Fi provisioning and connectivity manager for ESP32 with a captive portal, LittleFS credentials and diagnostics.",
   "keywords": "wifi,wifimanager,captive-portal,esp32,littlefs,dns,webserver,ntp,iot",
   "authors": [
