@@ -24,6 +24,10 @@ setCaptivePortal	KEYWORD2
 setPortalTimeout	KEYWORD2
 setAPClientCheck	KEYWORD2
 setWebClientCheck	KEYWORD2
+setLanguage	KEYWORD2
+getLanguage	KEYWORD2
+setLanguageSwitcher	KEYWORD2
+isLanguageSwitcherEnabled	KEYWORD2
 setFallbackPolicy	KEYWORD2
 setSmartRetries	KEYWORD2
 enableButtonPortal	KEYWORD2
@@ -56,3 +60,4 @@ AWM_VERSION_PATCH	LITERAL1
 #######################################
 FallbackPolicy	KEYWORD1
 LedPattern	KEYWORD1
+Language	KEYWORD1
