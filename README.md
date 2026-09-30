@@ -193,7 +193,7 @@ wifi.setLanguageSwitcher(true);                     // default; false hides the 
 
 If none of the browser's languages is supported, or the browser reports none, the portal falls back to English.
 
-**The language menu.** Every page shows a language menu (globe icon) in its header, so the user can switch at any time. A fixed `setLanguage()` value only chooses the starting language. The choice carries over to the success and error pages after saving.
+**The language menu.** Unless you turn it off with `setLanguageSwitcher(false)`, every page shows a language menu (globe icon) in its header, so the user can switch at any time. A fixed `setLanguage()` value only chooses the starting language. The choice carries over to the success and error pages after saving.
 
 | `setLanguage` | `setLanguageSwitcher` | Result |
 | --- | --- | --- |
@@ -202,7 +202,7 @@ If none of the browser's languages is supported, or the browser reports none, th
 | `EN` / `ES` / `DE` | `true` | Starts in that language; the user can change it |
 | `EN` / `ES` / `DE` | `false` | Locked to that language |
 
-The portal reads both settings from `/info` each time a page loads, so a later change takes effect on the next page load.
+The setup page reads both settings from `/info` each time it loads, so a later change takes effect on the next page load. The success and error pages don't call `/info`; they take the language and menu state from the address the setup page submits to.
 
 **Custom pages.** Pages you upload to LittleFS replace the built-in ones completely, including their language handling.
 

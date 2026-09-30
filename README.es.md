@@ -189,7 +189,7 @@ wifi.setLanguageSwitcher(true);                     // predeterminado; false ocu
 
 Si ninguno de los idiomas del navegador está admitido, o el navegador no informa ninguno, el portal usa inglés.
 
-**El menú de idioma.** Cada página muestra un menú de idioma (ícono de globo) en el encabezado, para que el usuario pueda cambiarlo en cualquier momento. Un valor fijo en `setLanguage()` solo elige el idioma inicial. La elección se mantiene en las páginas de éxito y de error después de guardar.
+**El menú de idioma.** Salvo que lo desactives con `setLanguageSwitcher(false)`, cada página muestra un menú de idioma (ícono de globo) en el encabezado, para que el usuario pueda cambiarlo en cualquier momento. Un valor fijo en `setLanguage()` solo elige el idioma inicial. La elección se mantiene en las páginas de éxito y de error después de guardar.
 
 | `setLanguage` | `setLanguageSwitcher` | Resultado |
 | --- | --- | --- |
@@ -198,7 +198,7 @@ Si ninguno de los idiomas del navegador está admitido, o el navegador no inform
 | `EN` / `ES` / `DE` | `true` | Empieza en ese idioma; el usuario puede cambiarlo |
 | `EN` / `ES` / `DE` | `false` | Fijo en ese idioma |
 
-El portal lee ambos ajustes de `/info` cada vez que se carga una página, así que un cambio posterior se aplica en la siguiente carga.
+La página de configuración lee ambos ajustes de `/info` cada vez que se carga, así que un cambio posterior se aplica en la siguiente carga. Las páginas de éxito y de error no consultan `/info`: toman el idioma y el estado del menú de la dirección a la que envía el formulario.
 
 **Páginas personalizadas.** Las páginas que subas a LittleFS reemplazan por completo a las integradas, incluido el manejo del idioma.
 
