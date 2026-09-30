@@ -115,3 +115,12 @@ def test_main_returns_nonzero_on_problems(tmp_path, capsys):
     bad.write_text("<html></html>", encoding="utf-8")
     assert check_i18n.main([str(bad)]) == 1
     assert "FAIL" in capsys.readouterr().out
+
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_real_pages_pass():
+    pages = [ROOT / "data" / name for name in ("index.html", "success.html", "error.html")]
+    problems = [p for page in pages for p in check_i18n.check_page(page)] + check_i18n.check_core(pages)
+    assert problems == []
