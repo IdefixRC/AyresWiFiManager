@@ -70,6 +70,7 @@
       -webkit-appearance:none; appearance:none; min-height:32px; padding:0; border:0;
       background:transparent; color:inherit; font:inherit; cursor:pointer;
     }
+    .lang select:focus-visible{ outline:2px solid var(--link); outline-offset:2px; border-radius:6px }
     .lang select option{ color:#000 }
   </style>
 </head>
@@ -228,11 +229,13 @@
     (function () {
       // Language and menu state arrive in the URL (/save?lang=xx&switcher=0|1),
       // because the device is restarting and can't answer /info.
+      const escapeHtml = s => String(s).replace(/[&<>"']/g,
+        c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
       const I18N = JSON.parse(document.getElementById('i18n').textContent);
       const params = new URLSearchParams(location.search);
       const select = document.getElementById('lang-select');
       function show(lang) {
-        AWMI18n.apply(document, I18N, lang, { back: '/?lang=' + encodeURIComponent(lang) });
+        AWMI18n.apply(document, I18N, lang, { back: escapeHtml('/?lang=' + encodeURIComponent(lang)) });
         AWMI18n.fillSelect(select, I18N, lang);
       }
       document.getElementById('lang-wrap').hidden = params.get('switcher') === '0';
