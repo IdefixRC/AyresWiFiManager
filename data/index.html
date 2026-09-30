@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
@@ -7,7 +7,12 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Wi-Fi Setup</title>
+  <title data-i18n="page_title">Wi-Fi Setup</title>
+  <script>
+    // Hide the page until its language is applied (at most 2.5 s, even if a script fails).
+    document.documentElement.classList.add('i18n-pending');
+    setTimeout(function () { document.documentElement.classList.remove('i18n-pending'); }, 2500);
+  </script>
   <style>
     :root {
       --bg: #000000;
@@ -574,6 +579,63 @@
       font-size: 12px;
     }
 
+    /* Portal language menu */
+    html.i18n-pending body {
+      visibility: hidden;
+    }
+
+    .header {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .lang {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 32px;
+      padding: 0 10px;
+      font-size: 12px;
+      color: #cfe2ff;
+      border: 1px dashed var(--ring);
+      border-radius: 999px;
+    }
+
+    .lang[hidden] {
+      display: none;
+    }
+
+    .lang .globe {
+      width: 14px;
+      height: 14px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+    }
+
+    .lang select {
+      -webkit-appearance: none;
+      appearance: none;
+      min-height: 32px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .lang select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: 6px;
+    }
+
+    .lang select option {
+      color: #000;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .logo::after {
         animation: none !important;
@@ -609,40 +671,48 @@
       </div>
 
       <div class="badges">
+        <label class="lang" id="lang-wrap">
+          <svg class="globe" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18" />
+            <path d="M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9s1.3-6.3 3.8-9z" />
+          </svg>
+          <select id="lang-select" data-i18n-aria-label="lang_menu_label" aria-label="Language"></select>
+        </label>
         <span class="badge version" id="ver">AWM</span>
       </div>
     </div>
 
     <div class="card">
       <section class="sec">
-        <h2>Redes disponibles</h2>
+        <h2 data-i18n="networks_heading">Available networks</h2>
         <div class="toolbar">
-          <input id="filter" class="input" type="search" placeholder="Filtrar SSID…" inputmode="search" />
-          <button id="btn-scan" class="btn" type="button">Reescanear</button>
+          <input id="filter" class="input" type="search" placeholder="Filter SSID…" data-i18n-placeholder="filter_placeholder" inputmode="search" />
+          <button id="btn-scan" class="btn" type="button" data-i18n="rescan_button">Rescan</button>
           <label class="switch">
             <input id="auto" type="checkbox" />
-            <span id="autoTxt"></span>
+            <span id="autoTxt" data-i18n="auto_label">Auto 30s</span>
           </label>
         </div>
-        <div id="status" class="hint" style="margin-top:8px">Escaneando…</div>
+        <div id="status" class="hint" style="margin-top:8px">Scanning…</div>
         <ul id="list" class="list" aria-live="polite"></ul>
-        <div id="empty" class="hint" style="display:none">No se encontraron redes. Probá reescanear.</div>
+        <div id="empty" class="hint" style="display:none" data-i18n="no_networks">No networks found. Try rescanning.</div>
       </section>
 
       <section class="sec">
-        <h2>Conectar</h2>
+        <h2 data-i18n="connect_heading">Connect</h2>
         <form id="form" method="POST" action="/save" autocomplete="off">
           <div class="row">
             <label for="ssid">SSID</label>
-            <input id="ssid" class="input grow" name="ssid" required placeholder="Nombre de la red" />
+            <input id="ssid" class="input grow" name="ssid" required placeholder="Network name" data-i18n-placeholder="ssid_placeholder" />
           </div>
 
           <div class="row">
-            <label for="password">Password</label>
+            <label for="password" data-i18n="password_label">Password</label>
             <div class="password-wrapper">
               <input id="password" class="input" name="password" type="password"
-                placeholder="Contraseña (vacía para redes abiertas)" />
-              <span class="eye-icon" id="toggle-password" title="Mostrar/Ocultar contraseña">
+                placeholder="Password (leave empty for open networks)" data-i18n-placeholder="password_placeholder" />
+              <span class="eye-icon" id="toggle-password" title="Show/hide password" data-i18n-title="toggle_password_title">
                 <svg id="eye-open" viewBox="0 0 24 24" style="display: none;">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
@@ -659,51 +729,51 @@
 
 
           <div class="footer">
-            <button id="btn-save" class="btn primary" type="submit">Guardar y conectar</button>
+            <button id="btn-save" class="btn primary" type="submit" data-i18n="save_button">Save and connect</button>
           </div>
         </form>
       </section>
 
       <div style="margin-top: 24px; text-align: center;">
-        <p class="hint" style="font-size: 13px; max-width: 80%; margin: 0 auto; line-height: 1.4;">
-          Tus credenciales se guardarán de forma segura en el dispositivo.
+        <p class="hint" style="font-size: 13px; max-width: 80%; margin: 0 auto; line-height: 1.4;" data-i18n="credentials_note">
+          Your credentials will be stored securely on the device.
         </p>
       </div>
       </section>
 
       <details class="accordion sec" style="border:none; margin-top:20px;">
         <summary style="font-size: 14px; color: var(--muted); justify-content: center;">
-          <span>Administración y recuperación</span>
+          <span data-i18n="admin_summary">Administration and recovery</span>
         </summary>
         <div class="sec acc">
           <div class="danger-zone">
-            <h3>Acciones de recuperación</h3>
-            <p class="hint">Elegí el alcance con cuidado. El dispositivo se reiniciará después de un borrado exitoso.</p>
+            <h3 data-i18n="recovery_heading">Recovery actions</h3>
+            <p class="hint" data-i18n="recovery_hint">Choose the scope carefully. The device restarts after a successful erase.</p>
 
             <div class="danger-actions">
               <div class="danger-action">
                 <div class="danger-title">
-                  <span>Restablecer Wi-Fi</span>
-                  <span class="pill">Recomendado</span>
+                  <span data-i18n="reset_wifi_title">Reset Wi-Fi</span>
+                  <span class="pill" data-i18n="recommended_pill">Recommended</span>
                 </div>
-                <p class="danger-copy">Elimina únicamente <code>/wifi.json</code>. Los demás archivos y configuraciones permanecen intactos.</p>
-                <button id="btn-erase-wifi" class="btn danger-soft" type="button" style="width:100%">
-                  Eliminar credenciales Wi-Fi
+                <p class="danger-copy" data-i18n-html="reset_wifi_copy">Removes only <code>/wifi.json</code>. All other files and settings stay untouched.</p>
+                <button id="btn-erase-wifi" class="btn danger-soft" type="button" style="width:100%" data-i18n="erase_wifi_button">
+                  Delete Wi-Fi credentials
                 </button>
               </div>
 
               <div class="danger-action critical">
                 <div class="danger-title">
-                  <span>Borrado total de JSON</span>
-                  <span class="pill">Irreversible</span>
+                  <span data-i18n="erase_all_title">Erase all JSON</span>
+                  <span class="pill" data-i18n="irreversible_pill">Irreversible</span>
                 </div>
-                <p class="danger-copy">Busca en todo LittleFS y elimina todos los archivos <code>.json</code>, incluido <code>/wifi.json</code>. No aplica la lista de archivos protegidos.</p>
+                <p class="danger-copy" data-i18n-html="erase_all_copy">Searches all of LittleFS and deletes every <code>.json</code> file, including <code>/wifi.json</code>. The protected-files list does not apply.</p>
                 <div class="danger-confirm">
-                  <label for="confirm-all">Escribí <strong>BORRAR TODO</strong> para habilitar esta acción.</label>
-                  <input id="confirm-all" class="input" type="text" autocomplete="off" spellcheck="false" placeholder="BORRAR TODO">
+                  <label for="confirm-all" data-i18n-html="erase_all_confirm_label">Type <strong>ERASE ALL</strong> to enable this action.</label>
+                  <input id="confirm-all" class="input" type="text" autocomplete="off" spellcheck="false" placeholder="ERASE ALL" data-i18n-placeholder="erase_all_confirm_word">
                 </div>
-                <button id="btn-erase-all" class="btn danger" type="button" style="width:100%" disabled>
-                  Eliminar todos los JSON
+                <button id="btn-erase-all" class="btn danger" type="button" style="width:100%" disabled data-i18n="erase_all_button">
+                  Delete all JSON files
                 </button>
               </div>
             </div>
@@ -713,8 +783,8 @@
       </details>
 
       <section class="sec">
-        <div class="hint">
-          Si el portal no abre solo, conectate al AP y entrá a <code id="portal-url">http://192.168.4.1</code>.
+        <div class="hint" data-i18n-html="portal_hint">
+          If the portal doesn't open on its own, connect to the AP and go to <code>http://192.168.4.1</code>.
         </div>
       </section>
     </div>
@@ -722,6 +792,151 @@
     <footer class="copyright">© 2020-2026 AyresNet · <span id="ver-footer"></span></footer>
   </div>
 
+  <script type="application/json" id="i18n">
+{
+  "en": {
+    "_name": "English",
+    "page_title": "Wi-Fi Setup",
+    "lang_menu_label": "Language",
+    "networks_heading": "Available networks",
+    "filter_placeholder": "Filter SSID…",
+    "rescan_button": "Rescan",
+    "auto_label": "Auto {s}s",
+    "scanning": "Scanning…",
+    "scan_done": "Done. Networks found: {n}",
+    "scan_error": "Scan failed. Try again.",
+    "no_networks": "No networks found. Try rescanning.",
+    "quality_good": "Good",
+    "quality_fair": "Fair",
+    "quality_weak": "Weak",
+    "quality_bad": "Poor",
+    "connect_heading": "Connect",
+    "ssid_placeholder": "Network name",
+    "password_label": "Password",
+    "password_placeholder": "Password (leave empty for open networks)",
+    "toggle_password_title": "Show/hide password",
+    "save_button": "Save and connect",
+    "saving": "Saving…",
+    "credentials_note": "Your credentials will be stored securely on the device.",
+    "admin_summary": "Administration and recovery",
+    "recovery_heading": "Recovery actions",
+    "recovery_hint": "Choose the scope carefully. The device restarts after a successful erase.",
+    "reset_wifi_title": "Reset Wi-Fi",
+    "recommended_pill": "Recommended",
+    "reset_wifi_copy": "Removes only <code>/wifi.json</code>. All other files and settings stay untouched.",
+    "erase_wifi_button": "Delete Wi-Fi credentials",
+    "erase_all_title": "Erase all JSON",
+    "irreversible_pill": "Irreversible",
+    "erase_all_copy": "Searches all of LittleFS and deletes every <code>.json</code> file, including <code>/wifi.json</code>. The protected-files list does not apply.",
+    "erase_all_confirm_label": "Type <strong>{word}</strong> to enable this action.",
+    "erase_all_confirm_word": "ERASE ALL",
+    "erase_all_button": "Delete all JSON files",
+    "erasing": "Deleting…",
+    "erasing_wifi_msg": "Deleting the Wi-Fi credentials…",
+    "erasing_all_msg": "Searching for and deleting JSON files…",
+    "erase_failed_files": "Files that could not be deleted: {n}. Close the process using them and try again.",
+    "erase_rejected": "The device rejected the request.",
+    "erase_done": "Files deleted: {n}. Restarting…",
+    "erase_incomplete": "The erase could not be completed.",
+    "erase_wifi_confirm": "Only /wifi.json will be deleted and the device will restart. Continue?",
+    "portal_hint": "If the portal doesn't open on its own, connect to the AP and go to {url}."
+  },
+  "es": {
+    "_name": "Español",
+    "page_title": "Configuración Wi-Fi",
+    "lang_menu_label": "Idioma",
+    "networks_heading": "Redes disponibles",
+    "filter_placeholder": "Filtrar SSID…",
+    "rescan_button": "Reescanear",
+    "auto_label": "Auto {s}s",
+    "scanning": "Escaneando…",
+    "scan_done": "Listo. {n} redes",
+    "scan_error": "Error al escanear. Reintentá.",
+    "no_networks": "No se encontraron redes. Probá reescanear.",
+    "quality_good": "Buena",
+    "quality_fair": "Moderada",
+    "quality_weak": "Débil",
+    "quality_bad": "Mala",
+    "connect_heading": "Conectar",
+    "ssid_placeholder": "Nombre de la red",
+    "password_label": "Contraseña",
+    "password_placeholder": "Contraseña (vacía para redes abiertas)",
+    "toggle_password_title": "Mostrar/Ocultar contraseña",
+    "save_button": "Guardar y conectar",
+    "saving": "Guardando…",
+    "credentials_note": "Tus credenciales se guardarán de forma segura en el dispositivo.",
+    "admin_summary": "Administración y recuperación",
+    "recovery_heading": "Acciones de recuperación",
+    "recovery_hint": "Elegí el alcance con cuidado. El dispositivo se reiniciará después de un borrado exitoso.",
+    "reset_wifi_title": "Restablecer Wi-Fi",
+    "recommended_pill": "Recomendado",
+    "reset_wifi_copy": "Elimina únicamente <code>/wifi.json</code>. Los demás archivos y configuraciones permanecen intactos.",
+    "erase_wifi_button": "Eliminar credenciales Wi-Fi",
+    "erase_all_title": "Borrado total de JSON",
+    "irreversible_pill": "Irreversible",
+    "erase_all_copy": "Busca en todo LittleFS y elimina todos los archivos <code>.json</code>, incluido <code>/wifi.json</code>. No aplica la lista de archivos protegidos.",
+    "erase_all_confirm_label": "Escribí <strong>{word}</strong> para habilitar esta acción.",
+    "erase_all_confirm_word": "BORRAR TODO",
+    "erase_all_button": "Eliminar todos los JSON",
+    "erasing": "Eliminando…",
+    "erasing_wifi_msg": "Eliminando las credenciales Wi-Fi…",
+    "erasing_all_msg": "Buscando y eliminando archivos JSON…",
+    "erase_failed_files": "{n} archivo(s) no pudieron eliminarse. Cerrá el proceso que los usa e intentá nuevamente.",
+    "erase_rejected": "El dispositivo rechazó la solicitud.",
+    "erase_done": "{n} archivo(s) eliminado(s). Reiniciando…",
+    "erase_incomplete": "No se pudo completar el borrado.",
+    "erase_wifi_confirm": "Se eliminará únicamente /wifi.json y el dispositivo se reiniciará. ¿Continuar?",
+    "portal_hint": "Si el portal no abre solo, conectate al AP y entrá a {url}."
+  },
+  "de": {
+    "_name": "Deutsch",
+    "page_title": "WLAN-Einrichtung",
+    "lang_menu_label": "Sprache",
+    "networks_heading": "Verfügbare Netzwerke",
+    "filter_placeholder": "SSID filtern…",
+    "rescan_button": "Erneut suchen",
+    "auto_label": "Auto {s}s",
+    "scanning": "Suche läuft…",
+    "scan_done": "Fertig. Gefundene Netzwerke: {n}",
+    "scan_error": "Suche fehlgeschlagen. Bitte erneut versuchen.",
+    "no_networks": "Keine Netzwerke gefunden. Bitte erneut suchen.",
+    "quality_good": "Gut",
+    "quality_fair": "Mittel",
+    "quality_weak": "Schwach",
+    "quality_bad": "Schlecht",
+    "connect_heading": "Verbinden",
+    "ssid_placeholder": "Netzwerkname",
+    "password_label": "Passwort",
+    "password_placeholder": "Passwort (bei offenen Netzwerken leer lassen)",
+    "toggle_password_title": "Passwort anzeigen/verbergen",
+    "save_button": "Speichern und verbinden",
+    "saving": "Wird gespeichert…",
+    "credentials_note": "Deine Zugangsdaten werden sicher auf dem Gerät gespeichert.",
+    "admin_summary": "Verwaltung und Wiederherstellung",
+    "recovery_heading": "Wiederherstellung",
+    "recovery_hint": "Bitte vorsichtig auswählen. Nach erfolgreichem Löschen startet das Gerät neu.",
+    "reset_wifi_title": "WLAN zurücksetzen",
+    "recommended_pill": "Empfohlen",
+    "reset_wifi_copy": "Löscht nur <code>/wifi.json</code>. Alle anderen Dateien und Einstellungen bleiben erhalten.",
+    "erase_wifi_button": "WLAN-Zugangsdaten löschen",
+    "erase_all_title": "JSON-Komplettlöschung",
+    "irreversible_pill": "Unwiderruflich",
+    "erase_all_copy": "Durchsucht das gesamte LittleFS und löscht alle <code>.json</code>-Dateien, einschließlich <code>/wifi.json</code> und aller geschützten Dateien.",
+    "erase_all_confirm_label": "Gib <strong>{word}</strong> ein, um diese Aktion freizugeben.",
+    "erase_all_confirm_word": "ALLES LÖSCHEN",
+    "erase_all_button": "Alle JSON-Dateien löschen",
+    "erasing": "Wird gelöscht…",
+    "erasing_wifi_msg": "WLAN-Zugangsdaten werden gelöscht…",
+    "erasing_all_msg": "JSON-Dateien werden gesucht und gelöscht…",
+    "erase_failed_files": "Nicht löschbare Dateien: {n}. Beende den Prozess, der sie verwendet, und versuche es erneut.",
+    "erase_rejected": "Das Gerät hat die Anfrage abgelehnt.",
+    "erase_done": "Gelöschte Dateien: {n}. Neustart…",
+    "erase_incomplete": "Das Löschen konnte nicht abgeschlossen werden.",
+    "erase_wifi_confirm": "Nur /wifi.json wird gelöscht, danach startet das Gerät neu. Fortfahren?",
+    "portal_hint": "Falls sich das Portal nicht von selbst öffnet, verbinde dich mit dem AP und öffne {url}."
+  }
+}
+  </script>
   <script>
     /* i18n-core:begin */
     // Shared portal i18n helpers. This block is identical in index.html,
@@ -819,59 +1034,122 @@
       const SHOW_QUALITY = true;
       const AUTO_MS = 30000; // 30 s
 
+      // Portal language: tables from the #i18n JSON block, helpers from AWMI18n.
+      const I18N = JSON.parse(document.getElementById('i18n').textContent);
+      const SUPPORTED = Object.keys(I18N);
+      const params = new URLSearchParams(location.search);
+      const PORTAL_URL = 'http://' + (location.host || '192.168.4.1');
+      let LANG = 'en';
+      let SWITCHER = true;
+      const t = (key, vars) => AWMI18n.format(AWMI18n.lookup(I18N, LANG, key), vars);
+      const escapeHtml = s => String(s).replace(/[&<>"']/g,
+        c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+      // Values for {placeholders} in the page text. data-i18n-html uses innerHTML,
+      // so everything except the fixed <code> tag is escaped.
+      const pageVars = () => ({
+        s: AUTO_MS / 1000,
+        word: escapeHtml(t('erase_all_confirm_word')),
+        url: '<code>' + escapeHtml(PORTAL_URL) + '</code>'
+      });
+
       const vf = document.getElementById('ver-footer');
       const $ = sel => document.querySelector(sel);
       const els = {
         list: $('#list'), empty: $('#empty'), status: $('#status'), filter: $('#filter'),
         auto: $('#auto'), btnScan: $('#btn-scan'), ssid: $('#ssid'), pass: $('#password'),
         show: $('#show'), form: $('#form'), btnSave: $('#btn-save'),
-        apHost: $('#ap-host'), portalUrl: $('#portal-url'), ver: $('#ver'),
+        apHost: $('#ap-host'), ver: $('#ver'),
         btnEraseWifi: $('#btn-erase-wifi'), btnEraseAll: $('#btn-erase-all'),
-        confirmAll: $('#confirm-all'), eraseMsg: $('#erase-msg')
+        confirmAll: $('#confirm-all'), eraseMsg: $('#erase-msg'),
+        langWrap: $('#lang-wrap'), langSelect: $('#lang-select')
       };
 
-      // Texto dinámico del auto-scan
-      const autoTxt = document.getElementById('autoTxt');
-      if (autoTxt) autoTxt.textContent = `Auto ${AUTO_MS / 1000}s`;
+      let lastScan = []; let timer = null; let hasScanned = false;
+      let erasing = false; let busyButton = null;
+
+      // Dynamic messages keep their key so a language change can redraw them.
+      let statusMsg = { key: 'scanning', vars: null };
+      let eraseMsg = null;
+      function setStatus(key, vars) {
+        statusMsg = { key, vars: vars || null };
+        els.status.textContent = t(key, vars);
+      }
+      function setEraseMsg(key, vars) {
+        eraseMsg = key ? { key, vars: vars || null } : null;
+        els.eraseMsg.textContent = key ? t(key, vars) : '';
+      }
+      function i18nError(key, vars) {
+        const err = new Error(key);
+        err.i18nKey = key;
+        err.i18nVars = vars || null;
+        return err;
+      }
+      function confirmMatches() {
+        return els.confirmAll.value.trim().toUpperCase() === t('erase_all_confirm_word').toUpperCase();
+      }
+
+      function setLanguage(lang) {
+        LANG = lang;
+        AWMI18n.apply(document, I18N, LANG, pageVars());
+        AWMI18n.fillSelect(els.langSelect, I18N, LANG);
+        els.form.setAttribute('action',
+          '/save?lang=' + encodeURIComponent(LANG) + '&switcher=' + (SWITCHER ? '1' : '0'));
+        if (statusMsg) els.status.textContent = t(statusMsg.key, statusMsg.vars);
+        if (eraseMsg) els.eraseMsg.textContent = t(eraseMsg.key, eraseMsg.vars);
+        if (busyButton) busyButton.textContent = t('erasing');
+        if (!erasing) els.btnEraseAll.disabled = !confirmMatches();
+        if (hasScanned) render(lastScan);
+      }
+
+      function initLanguage(info) {
+        SWITCHER = !(info && info.lang_switch === false);
+        els.langWrap.hidden = !SWITCHER;
+        setLanguage(AWMI18n.resolve({
+          supported: SUPPORTED,
+          urlLang: params.get('lang'),
+          urlAllowed: SWITCHER,
+          configured: info ? info.lang : null,
+          browserLangs: AWMI18n.browserLangs(navigator)
+        }));
+        document.documentElement.classList.remove('i18n-pending');
+      }
 
       // Fallback inmediato hasta que llegue /info
       if (els.ver) els.ver.textContent = 'v?';
       if (vf) vf.textContent = 'v?';
       els.apHost.textContent = 'AP: ' + (location.hostname || '192.168.4.1');
-      els.portalUrl.textContent = 'http://' + (location.host || '192.168.4.1');
 
-      async function loadInfo() {
+      async function fetchInfo() {
         try {
           const resp = await fetch('/info', { cache: 'no-store' });
-          if (!resp.ok) throw 0;
-          const info = await resp.json();
-
-          // Versión del firmware (AWM)
-          VERSION = info.version || null;
-          if (els.ver) els.ver.textContent = 'v' + (VERSION || '?');
-          if (vf) vf.textContent = 'v' + (VERSION || '?');
-
-          // Mostrar: AP: <host> (<ip>)
-          let host = info.host || null;
-          let ip = info.ap_ip || null;
-
-          // Fallback: si no vino ap_ip, intento sacar IP de la URL actual
-          if (!ip && typeof location !== 'undefined' && location.host) {
-            const maybeIp = location.host.split(':')[0];
-            if (/^\d+\.\d+\.\d+\.\d+$/.test(maybeIp)) ip = maybeIp;
-          }
-
-          //if (info && info.host) {
-          //  els.apHost.textContent = 'AP: ' + info.host;
-          //}
-          if (host || ip) {
-            let label = 'AP: ';
-            if (host) label += host;
-            if (ip) label += (host ? ' ' : '') + '(' + ip + ')';
-            els.apHost.textContent = label;
-          }
+          if (!resp.ok) return null;
+          return await resp.json();
         } catch (e) {
-          // deja los fallbacks
+          return null;
+        }
+      }
+
+      function showInfo(info) {
+        // Versión del firmware (AWM)
+        VERSION = info.version || null;
+        if (els.ver) els.ver.textContent = 'v' + (VERSION || '?');
+        if (vf) vf.textContent = 'v' + (VERSION || '?');
+
+        // Mostrar: AP: <host> (<ip>)
+        let host = info.host || null;
+        let ip = info.ap_ip || null;
+
+        // Fallback: si no vino ap_ip, intento sacar IP de la URL actual
+        if (!ip && typeof location !== 'undefined' && location.host) {
+          const maybeIp = location.host.split(':')[0];
+          if (/^\d+\.\d+\.\d+\.\d+$/.test(maybeIp)) ip = maybeIp;
+        }
+
+        if (host || ip) {
+          let label = 'AP: ';
+          if (host) label += host;
+          if (ip) label += (host ? ' ' : '') + '(' + ip + ')';
+          els.apHost.textContent = label;
         }
       }
 
@@ -895,10 +1173,10 @@
         return wrap;
       }
       function qualityTag(rssi) {
-        let text = 'Mala', cls = 'bad';
-        if (rssi >= -60) { text = 'Buena'; cls = 'good'; }
-        else if (rssi >= -67) { text = 'Moderada'; cls = 'mid'; }
-        else if (rssi >= -75) { text = 'Débil'; cls = 'weak'; }
+        let text = t('quality_bad'), cls = 'bad';
+        if (rssi >= -60) { text = t('quality_good'); cls = 'good'; }
+        else if (rssi >= -67) { text = t('quality_fair'); cls = 'mid'; }
+        else if (rssi >= -75) { text = t('quality_weak'); cls = 'weak'; }
         const span = document.createElement('span');
         span.className = 'qual ' + cls;
         span.textContent = text;
@@ -958,22 +1236,21 @@
         }
       }
 
-      let lastScan = []; let timer = null;
-
       async function scan() {
         try {
           els.btnScan.disabled = true;
-          els.status.textContent = 'Escaneando…';
+          setStatus('scanning');
           let resp = await fetch('/scan', { cache: 'no-store' });
           if (!resp.ok) throw new Error('HTTP ' + resp.status);
           let data = await resp.json();
           if (!Array.isArray(data)) data = (data && data.networks) || [];
           lastScan = data;
+          hasScanned = true;
           render(lastScan);
-          els.status.textContent = `Listo. ${lastScan.length} redes`;
+          setStatus('scan_done', { n: lastScan.length });
         } catch (e) {
           console.error(e);
-          els.status.textContent = 'Error al escanear. Reintentá.';
+          setStatus('scan_error');
         } finally {
           els.btnScan.disabled = false;
         }
@@ -988,6 +1265,7 @@
       els.btnScan.addEventListener('click', () => { stopAuto(); scan(); });
       els.filter.addEventListener('input', () => render(lastScan));
       els.auto.addEventListener('change', () => { stopAuto(); if (els.auto.checked) scan(); });
+      els.langSelect.addEventListener('change', () => setLanguage(els.langSelect.value));
 
       els.list.addEventListener('click', (ev) => {
         const li = ev.target.closest('.item'); if (!li) return;
@@ -1016,18 +1294,18 @@
 
       els.form.addEventListener('submit', () => {
         els.btnSave.disabled = true;
-        els.btnSave.textContent = 'Guardando…';
+        els.btnSave.textContent = t('saving');
       });
 
       async function requestErase(scope, button) {
-        const originalText = button.textContent;
+        erasing = true;
+        busyButton = button;
         button.disabled = true;
-        button.textContent = 'Eliminando…';
+        button.textContent = t('erasing');
         els.btnEraseWifi.disabled = true;
         els.btnEraseAll.disabled = true;
-        els.eraseMsg.textContent = scope === 'wifi'
-          ? 'Eliminando las credenciales Wi-Fi…'
-          : 'Buscando y eliminando archivos JSON…';
+        if (scope === 'wifi') setEraseMsg('erasing_wifi_msg');
+        else setEraseMsg('erasing_all_msg');
 
         try {
           const body = new URLSearchParams();
@@ -1043,28 +1321,30 @@
 
           if (!response.ok || !result.ok) {
             const failed = Number(result.failed || 0);
-            throw new Error(failed
-              ? `${failed} archivo(s) no pudieron eliminarse. Cerrá el proceso que los usa e intentá nuevamente.`
-              : 'El dispositivo rechazó la solicitud.');
+            if (failed) throw i18nError('erase_failed_files', { n: failed });
+            throw i18nError('erase_rejected');
           }
 
-          els.eraseMsg.textContent = `${result.removed || 0} archivo(s) eliminado(s). Reiniciando…`;
+          setEraseMsg('erase_done', { n: result.removed || 0 });
         } catch (error) {
           console.error(error);
-          els.eraseMsg.textContent = error.message || 'No se pudo completar el borrado.';
-          button.textContent = originalText;
+          if (error && error.i18nKey) setEraseMsg(error.i18nKey, error.i18nVars);
+          else setEraseMsg('erase_incomplete');
+          erasing = false;
+          busyButton = null;
+          button.textContent = t(button.getAttribute('data-i18n'));
           els.btnEraseWifi.disabled = false;
-          els.btnEraseAll.disabled = els.confirmAll.value.trim().toUpperCase() !== 'BORRAR TODO';
+          els.btnEraseAll.disabled = !confirmMatches();
         }
       }
 
       els.btnEraseWifi.addEventListener('click', () => {
-        const accepted = window.confirm('Se eliminará únicamente /wifi.json y el dispositivo se reiniciará. ¿Continuar?');
+        const accepted = window.confirm(t('erase_wifi_confirm'));
         if (accepted) requestErase('wifi', els.btnEraseWifi);
       });
 
       els.confirmAll.addEventListener('input', () => {
-        els.btnEraseAll.disabled = els.confirmAll.value.trim().toUpperCase() !== 'BORRAR TODO';
+        els.btnEraseAll.disabled = !confirmMatches();
       });
 
       els.btnEraseAll.addEventListener('click', () => {
@@ -1114,7 +1394,16 @@
       })();
 
       // Primer ciclo
-      loadInfo(); // <-- trae versión AWM desde el firmware
+      // The language waits for /info at most 1.5 s. After that it uses the
+      // browser's languages, and a late /info only updates version and host.
+      let languageReady = false;
+      const languageTimer = setTimeout(() => {
+        if (!languageReady) { languageReady = true; initLanguage(null); }
+      }, 1500);
+      fetchInfo().then(info => {
+        if (info) showInfo(info);
+        if (!languageReady) { languageReady = true; clearTimeout(languageTimer); initLanguage(info); }
+      });
       // Esperar 2s para que la conexión WiFi se estabilice antes de escanear
       setTimeout(scan, 2000);
     })();
