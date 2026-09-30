@@ -148,6 +148,9 @@
  *  ---------------------------------------------------------------------------
  *  Unreleased          Portal in English, Spanish and German: setLanguage(),
  *                      setLanguageSwitcher(), /info lang and lang_switch.
+ *                      Default AUTO: non-Spanish browsers now get English;
+ *                      setLanguage(ES) keeps the old Spanish-only portal.
+ *                      The 405 reply is now "Method not allowed".
  *  2.3.3  (2026-10-01) Portal scan lists networks again on Arduino-ESP32 core
  *                      3.x; the Task WDT is fed only once subscribed, so the
  *                      log no longer floods with "task not found".
@@ -273,7 +276,8 @@ public:
   void setWebClientCheck(bool enabled);
 
   // Portal language (default AUTO) and whether the portal pages show their
-  // language menu (default true). The pages read both from /info.
+  // language menu (default true). The setup page reads both from /info; the
+  // success and error pages get them from the /save URL.
   void setLanguage(Language lang);
   Language getLanguage() const;
   void setLanguageSwitcher(bool enabled);

@@ -200,6 +200,8 @@ Si ninguno de los idiomas del navegador está admitido, o el navegador no inform
 
 La página de configuración lee ambos ajustes de `/info` cada vez que se carga, así que un cambio posterior se aplica en la siguiente carga. Las páginas de éxito y de error no consultan `/info`: toman el idioma y el estado del menú de la dirección a la que envía el formulario.
 
+**Actualizar desde 2.3.x.** El portal integrado antes estaba solo en español. Con el valor predeterminado `AUTO`, los navegadores en otros idiomas ahora ven inglés (o alemán). Para mantener el comportamiento anterior, llamá a `setLanguage(AyresWiFiManager::Language::ES)` y `setLanguageSwitcher(false)`.
+
 **Páginas personalizadas.** Las páginas que subas a LittleFS reemplazan por completo a las integradas, incluido el manejo del idioma.
 
 **Agregar un idioma.** Agregá un valor a `Language` y su código a `languageCode()` en `AyresWiFiManager.cpp`, agregá una tabla al bloque `i18n` de cada página en `data/` y regenerá las páginas integradas (ver [Páginas integradas del portal](#páginas-integradas-del-portal)). `tools/check_i18n.py` informa cualquier texto faltante o sin uso. Las traducciones son bienvenidas como pull requests.
@@ -300,7 +302,7 @@ python tools/check_i18n.py
 `ayres_gzip.py` es el AyresNet GZIP Asset Compiler. AyresNet lo mantiene fuera del repositorio (figura en `.gitignore`), así que antes del primer uso restaurá la última versión publicada desde el historial de Git:
 
 ```bash
-git show 8871946:ayres_gzip.py > ayres_gzip.py
+git restore --source=8871946 -- ayres_gzip.py
 ```
 
 `tools/check_portal_assets.py` confirma que el header coincide con `data/`, y `tools/check_i18n.py` confirma que las traducciones de cada página estén completas. CI ejecuta ambas, más los tests de las herramientas, en cada pull request.
