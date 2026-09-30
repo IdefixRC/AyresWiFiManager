@@ -1,6 +1,6 @@
 # AyresWiFiManager
 
-[![Version](https://img.shields.io/badge/version-2.3.3-4361ee)](https://github.com/ayresnet/AyresWiFiManager)
+[![Version](https://img.shields.io/badge/version-2.3.3-4361ee)](https://github.com/IdefixRC/AyresWiFiManager/releases)
 [![Platform](https://img.shields.io/badge/platform-ESP32-2ec27e?logo=espressif)](https://www.espressif.com/en/products/socs/esp32)
 [![Arduino](https://img.shields.io/badge/framework-Arduino-00979d?logo=arduino)](https://www.arduino.cc/)
 [![License](https://img.shields.io/badge/license-MIT-6c757d)](LICENSE)
@@ -16,6 +16,7 @@ AyresWiFiManager (AWM) is an ESP32 library for Wi-Fi provisioning and connectivi
 - Captive portal with SoftAP, DNS catch-all and operating-system detection routes.
 - Responsive portal UI served from LittleFS, with embedded GZIP pages as fallback.
 - Wi-Fi scanning, credential provisioning and configurable portal inactivity timeout.
+- Portal in English, Spanish and German, with automatic browser language detection and an optional language menu.
 - Explicit fallback policies: `ON_FAIL`, `NO_CREDENTIALS_ONLY`, `SMART_RETRIES`, `BUTTON_ONLY` and `NEVER`.
 - Non-blocking reconnection driver with configurable backoff and attempt windows.
 - Unified connectivity state and diagnostic information for application code.
@@ -36,9 +37,11 @@ Version 2.3.3 supports ESP32 exclusively.
 
 ## Installation
 
+This fork isn't published to a library registry. If you install `AyresWiFiManager` from a registry, you get the upstream library, which doesn't include this fork's changes.
+
 ### Arduino IDE
 
-Install `AyresWiFiManager` from Library Manager and ensure ArduinoJson 6 is available. The portal has embedded fallback pages, so a LittleFS upload is optional unless you customize the UI.
+Download the source ZIP of the latest release from [Releases](https://github.com/IdefixRC/AyresWiFiManager/releases) and add it with **Sketch → Include Library → Add .ZIP Library…**. Make sure ArduinoJson 6 is installed. The portal has built-in pages, so a LittleFS upload is optional unless you customize the UI.
 
 ### PlatformIO
 
@@ -50,8 +53,10 @@ framework = arduino
 board_build.filesystem = littlefs
 
 lib_deps =
-  ayresnet/AyresWiFiManager@^2.3.0
+  https://github.com/IdefixRC/AyresWiFiManager.git#2.3.2
 ```
+
+Replace `2.3.2` with the latest release tag. To use the upstream library from the PlatformIO registry instead, use `ayresnet/AyresWiFiManager@^2.3.0`.
 
 ## Quick start
 
@@ -65,6 +70,8 @@ void setup() {
 
   wifi.setHostname("my-device");
   wifi.setAPCredentials("MyDevice-Setup", "change-me");
+  wifi.setLanguage(AyresWiFiManager::Language::AUTO);
+  wifi.setLanguageSwitcher(true);
   wifi.setPortalTimeout(300);
   wifi.setAPClientCheck(true);
   wifi.setWebClientCheck(true);
@@ -147,7 +154,7 @@ The portal uses these local endpoints:
 | --- | --- | --- |
 | `GET` | `/` | Portal UI |
 | `GET` | `/scan` or `/scan.json` | Nearby Wi-Fi networks |
-| `GET` | `/info` | Library, AP and host information |
+| `GET` | `/info` | Library, AP and host information, plus the portal language settings (`lang`, `lang_switch`) |
 | `POST` | `/save` | Save credentials and restart |
 | `POST` | `/erase` | Remove only `/wifi.json` or perform a confirmed JSON reset |
 
@@ -157,7 +164,49 @@ The recovery section offers two different operations. `scope=wifi` removes only 
 
 AWM closes every file handle it owns before deleting and retries each removal three times. It cannot safely close a handle owned by another library or application component; such files are reported as failed instead of claiming a successful reset.
 
-Custom pages can be uploaded to LittleFS as `data/index.html`, `data/success.html` and `data/error.html`. Use `setHtmlPathPrefix()` when storing them under a subdirectory.
+To replace the built-in pages, put your own `index.html`, `success.html` and `error.html` in your project's `data/` folder and upload them to LittleFS (in PlatformIO: `pio run --target uploadfs`). Pages in LittleFS take precedence over the built-in ones, including their language handling. Use `setHtmlPathPrefix()` when storing them under a subdirectory.
+
+## Portal language
+
+The built-in portal pages are available in English, Spanish and German. Two settings control them, both called in `setup()` before `begin()`:
+
+```cpp
+wifi.setLanguage(AyresWiFiManager::Language::AUTO); // default; AUTO, EN, ES or DE
+wifi.setLanguageSwitcher(true);                     // default; false hides the language menu
+```
+
+| `setLanguage` | Language shown when the portal opens |
+| --- | --- |
+| `AUTO` (default) | The browser's language if the portal supports it, otherwise English |
+| `EN` | English |
+| `ES` | Spanish |
+| `DE` | German |
+
+**How `AUTO` decides.** The page reads the browser's preferred languages in order (on a phone, its language settings) and uses the first one the portal supports, matching on the language only, not the region:
+
+| Browser languages | Portal shows |
+| --- | --- |
+| `es-AR` | Spanish |
+| `de-CH`, `en` | German |
+| `pt-BR`, `es` | Spanish (the second preference is supported) |
+| `fr-FR`, `it` | English (neither is supported yet) |
+
+If none of the browser's languages is supported, or the browser reports none, the portal falls back to English.
+
+**The language menu.** Every page shows a language menu (globe icon) in its header, so the user can switch at any time. A fixed `setLanguage()` value only chooses the starting language. The choice carries over to the success and error pages after saving.
+
+| `setLanguage` | `setLanguageSwitcher` | Result |
+| --- | --- | --- |
+| `AUTO` | `true` (default) | Browser language or English; the user can change it |
+| `AUTO` | `false` | Browser language or English; no manual choice |
+| `EN` / `ES` / `DE` | `true` | Starts in that language; the user can change it |
+| `EN` / `ES` / `DE` | `false` | Locked to that language |
+
+The portal reads both settings from `/info` each time a page loads, so a later change takes effect on the next page load.
+
+**Custom pages.** Pages you upload to LittleFS replace the built-in ones completely, including their language handling.
+
+**Adding a language.** Add a value to `Language` and its code to `languageCode()` in `AyresWiFiManager.cpp`, add a table to the `i18n` block of each page in `data/`, then regenerate the built-in pages (see [Built-in portal pages](#built-in-portal-pages)). `tools/check_i18n.py` reports any missing or unused text. Translations are welcome as pull requests.
 
 ## Fallback policies
 
@@ -171,8 +220,13 @@ Custom pages can be uploaded to LittleFS as `data/index.html`, `data/success.htm
 
 Default pins are GPIO 0 for the active-low button and GPIO 2 for the LED.
 
-- Hold the button for 2–5 seconds to open the portal.
-- Hold it for 5 seconds or longer to erase credentials and restart.
+The button is read only while `run()` starts: press it within the first 3 seconds (for example, hold it while the device boots) and keep holding:
+
+- 2–5 seconds opens the portal. `enableButtonPortal(false)` disables this.
+- 5 seconds or longer erases the stored credentials and restarts.
+
+LED patterns:
+
 - Slow blink: disconnected from Wi-Fi.
 - Fast blink: connecting or scanning.
 - Solid: connected to Wi-Fi.
@@ -230,45 +284,32 @@ Set `AWM_ENABLE_LOG=0` to compile logging out. Levels range from 1 (`ERROR`) to 
 ## Repository layout
 
 ```text
-data/          Custom captive-portal pages
+data/          Source of the built-in portal pages
 examples/      Arduino and PlatformIO examples
-src/           Public headers and library implementation
+src/           Public headers, library implementation and the generated AWM_html_gz.h
+tools/         Checks for the built-in pages and their translations, with tests
 .github/       Continuous integration
 ```
 
 The local `src/main.cpp` development harness is intentionally ignored and is not distributed as part of the library.
 
-## AyresNet GZIP Asset Compiler
+## Built-in portal pages
 
-The repository includes `ayres_gzip.py`, a dependency-free tool developed by AyresNet. It has no hardcoded input files or output directories. Running it without arguments opens an interactive wizard:
-
-```bash
-python ayres_gzip.py
-```
-
-The wizard accepts one or more files, folders, or glob patterns and asks where to create the `.h` or `.hpp` header. The same operations can be automated from the command line:
-
-```bash
-# One file
-python ayres_gzip.py web/index.html -o include/web_gz.h
-
-# Multiple files
-python ayres_gzip.py web/index.html web/app.css web/app.js -o include/web_gz.h
-
-# A complete directory, including subdirectories
-python ayres_gzip.py web -r -o include/web_gz.h
-
-# Selected file types and portable C++ output
-python ayres_gzip.py assets -r -I "*.html" -I "*.css" -o include/assets_gz.hpp -f cpp -p MY_APP
-```
-
-To regenerate this library's embedded portal explicitly:
+The pages in `data/` are compressed into `src/AWM_html_gz.h`, which the library serves whenever LittleFS has no page of the same name. After editing a page, regenerate the header and run the checks:
 
 ```bash
 python ayres_gzip.py data/index.html data/success.html data/error.html -o src/AWM_html_gz.h
+python tools/check_portal_assets.py
+python tools/check_i18n.py
 ```
 
-Use `--check` with the same arguments in CI to fail when a header is outdated. Generated GZIP streams omit timestamps and source filenames, producing stable Git diffs. Run `python ayres_gzip.py -h` or `python ayres_gzip.py --help` for all options.
+`ayres_gzip.py` is the AyresNet GZIP Asset Compiler. AyresNet keeps it out of the repository (it is listed in `.gitignore`), so restore the last published version from the Git history before the first use:
+
+```bash
+git show 8871946:ayres_gzip.py > ayres_gzip.py
+```
+
+`tools/check_portal_assets.py` confirms that the header matches `data/`, and `tools/check_i18n.py` confirms that every page's translations are complete. CI runs both, plus the tools' own tests, on every pull request.
 
 ## License
 
