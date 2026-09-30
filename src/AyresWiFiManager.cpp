@@ -28,6 +28,10 @@
  *
  *  CHANGELOG (Semantic Versioning)
  *  =========================================================================
+ *  Sin publicar
+ *    + [FEATURE] Portal en inglés, español y alemán: setLanguage() y
+ *      setLanguageSwitcher(); /info informa lang y lang_switch
+ *
  *  v2.3.3 (2026-10-01)
  *    + [FIX] El escaneo del portal vuelve a listar redes en Arduino-ESP32
  *      core 3.x (WiFi.scanNetworks() en lugar de esp_wifi_scan_start())
