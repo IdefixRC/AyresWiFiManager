@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Error al guardar</title>
+  <title data-i18n="error_title">Could not save</title>
   <style>
     :root{
       --bg:#0b1220; --card:#121a2b; --ring:#3b1b1f; --text:#e6efff;
@@ -57,9 +57,31 @@
       .icon svg{ animation:none !important }
       .icon svg .pulse{ animation:none !important; opacity:.2 }
     }
+    /* Portal language menu */
+    .lang{
+      position:fixed; top:calc(12px + env(safe-area-inset-top)); right:calc(12px + env(safe-area-inset-right));
+      display:inline-flex; align-items:center; gap:6px; min-height:32px; padding:0 10px;
+      font-size:12px; color:var(--muted); background:var(--card);
+      border:1px solid var(--ring); border-radius:999px;
+    }
+    .lang[hidden]{ display:none }
+    .lang .globe{ width:14px; height:14px; flex:none; fill:none; stroke:currentColor; stroke-width:1.8 }
+    .lang select{
+      -webkit-appearance:none; appearance:none; min-height:32px; padding:0; border:0;
+      background:transparent; color:inherit; font:inherit; cursor:pointer;
+    }
+    .lang select option{ color:#000 }
   </style>
 </head>
 <body>
+  <label class="lang" id="lang-wrap">
+    <svg class="globe" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9s1.3-6.3 3.8-9z" />
+    </svg>
+    <select id="lang-select" data-i18n-aria-label="lang_menu_label" aria-label="Language"></select>
+  </label>
   <main class="card" role="status" aria-live="polite">
     <!-- Ícono SVG con cruz + pulso -->
     <div class="icon" aria-hidden="true">
@@ -84,9 +106,145 @@
       </svg>
     </div>
 
-    <h1>Error al guardar</h1>
-    <p class="muted">No se pudo guardar los datos o faltan campos.</p>
-    <p class="small"><a href="/">Volver al formulario</a> y reintentá.</p>
+    <h1 data-i18n="error_title">Could not save</h1>
+    <p class="muted" data-i18n="error_detail">The data could not be saved, or fields are missing.</p>
+    <p class="small" data-i18n-html="error_back"><a href="/">Back to the form</a> and try again.</p>
   </main>
+  <script type="application/json" id="i18n">
+{
+  "en": {
+    "_name": "English",
+    "lang_menu_label": "Language",
+    "error_title": "Could not save",
+    "error_detail": "The data could not be saved, or fields are missing.",
+    "error_back": "<a href=\"{back}\">Back to the form</a> and try again."
+  },
+  "es": {
+    "_name": "Español",
+    "lang_menu_label": "Idioma",
+    "error_title": "Error al guardar",
+    "error_detail": "No se pudo guardar los datos o faltan campos.",
+    "error_back": "<a href=\"{back}\">Volver al formulario</a> y reintentá."
+  },
+  "de": {
+    "_name": "Deutsch",
+    "lang_menu_label": "Sprache",
+    "error_title": "Speichern fehlgeschlagen",
+    "error_detail": "Die Daten konnten nicht gespeichert werden oder es fehlen Angaben.",
+    "error_back": "<a href=\"{back}\">Zurück zum Formular</a> und erneut versuchen."
+  }
+}
+  </script>
+  <script>
+    /* i18n-core:begin */
+    // Shared portal i18n helpers. This block is identical in index.html,
+    // success.html and error.html; tools/check_i18n.py enforces that.
+    var AWMI18n = (function () {
+      'use strict';
+      var has = function (obj, key) { return Object.prototype.hasOwnProperty.call(obj, key); };
+
+      // "de-CH" -> "de", "EN_us" -> "en"
+      function primary(tag) {
+        return String(tag || '').trim().toLowerCase().split(/[-_]/)[0];
+      }
+
+      // First browser language the portal supports, otherwise English.
+      function pickBrowser(supported, browserLangs) {
+        var list = browserLangs || [];
+        for (var i = 0; i < list.length; i++) {
+          var code = primary(list[i]);
+          if (supported.indexOf(code) !== -1) return code;
+        }
+        return supported.indexOf('en') !== -1 ? 'en' : supported[0];
+      }
+
+      // Order: ?lang (when allowed), then the configured language, then AUTO.
+      function resolve(o) {
+        var url = primary(o.urlLang);
+        if (o.urlAllowed && url && o.supported.indexOf(url) !== -1) return url;
+        var configured = primary(o.configured);
+        if (configured && configured !== 'auto' && o.supported.indexOf(configured) !== -1) return configured;
+        return pickBrowser(o.supported, o.browserLangs);
+      }
+
+      function format(text, vars) {
+        return String(text).replace(/\{(\w+)\}/g, function (match, name) {
+          return vars && has(vars, name) ? String(vars[name]) : match;
+        });
+      }
+
+      // Current language, then English, then the key itself. Never blank.
+      function lookup(tables, lang, key) {
+        if (tables[lang] && has(tables[lang], key)) return tables[lang][key];
+        if (tables.en && has(tables.en, key)) return tables.en[key];
+        return key;
+      }
+
+      function browserLangs(nav) {
+        if (!nav) return [];
+        if (nav.languages && nav.languages.length) return Array.prototype.slice.call(nav.languages);
+        return nav.language ? [nav.language] : [];
+      }
+
+      // data-i18n-html uses innerHTML: only our own table text and escaped vars go there.
+      function apply(doc, tables, lang, vars) {
+        var text = function (key) { return format(lookup(tables, lang, key), vars); };
+        doc.querySelectorAll('[data-i18n]').forEach(function (el) {
+          el.textContent = text(el.getAttribute('data-i18n'));
+        });
+        doc.querySelectorAll('[data-i18n-html]').forEach(function (el) {
+          el.innerHTML = text(el.getAttribute('data-i18n-html'));
+        });
+        [['data-i18n-placeholder', 'placeholder'], ['data-i18n-title', 'title'],
+         ['data-i18n-aria-label', 'aria-label']].forEach(function (pair) {
+          doc.querySelectorAll('[' + pair[0] + ']').forEach(function (el) {
+            el.setAttribute(pair[1], text(el.getAttribute(pair[0])));
+          });
+        });
+        doc.documentElement.lang = lang;
+      }
+
+      // One option per table, in table order, labelled with the language's own name.
+      function fillSelect(select, tables, lang) {
+        select.textContent = '';
+        Object.keys(tables).forEach(function (code) {
+          var option = select.ownerDocument.createElement('option');
+          option.value = code;
+          option.lang = code;
+          option.textContent = (tables[code] && tables[code]._name) || code;
+          option.selected = code === lang;
+          select.appendChild(option);
+        });
+      }
+
+      return {
+        primary: primary, pickBrowser: pickBrowser, resolve: resolve, format: format,
+        lookup: lookup, browserLangs: browserLangs, apply: apply, fillSelect: fillSelect
+      };
+    })();
+    /* i18n-core:end */
+  </script>
+  <script>
+    (function () {
+      // Language and menu state arrive in the URL (/save?lang=xx&switcher=0|1),
+      // because the device is restarting and can't answer /info.
+      const I18N = JSON.parse(document.getElementById('i18n').textContent);
+      const params = new URLSearchParams(location.search);
+      const select = document.getElementById('lang-select');
+      function show(lang) {
+        AWMI18n.apply(document, I18N, lang, { back: '/?lang=' + encodeURIComponent(lang) });
+        AWMI18n.fillSelect(select, I18N, lang);
+      }
+      document.getElementById('lang-wrap').hidden = params.get('switcher') === '0';
+      select.addEventListener('change', () => show(select.value));
+      show(AWMI18n.resolve({
+        supported: Object.keys(I18N),
+        urlLang: params.get('lang'),
+        urlAllowed: true,
+        configured: null,
+        browserLangs: AWMI18n.browserLangs(navigator)
+      }));
+    })();
+  </script>
 </body>
 </html>
