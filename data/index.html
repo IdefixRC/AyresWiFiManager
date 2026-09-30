@@ -1085,7 +1085,8 @@
         return err;
       }
       function confirmMatches() {
-        return els.confirmAll.value.trim().toUpperCase() === t('erase_all_confirm_word').toUpperCase();
+        return els.confirmAll.value.trim().normalize('NFC').toUpperCase() ===
+          t('erase_all_confirm_word').normalize('NFC').toUpperCase();
       }
 
       function setLanguage(lang) {
@@ -1344,7 +1345,7 @@
       });
 
       els.confirmAll.addEventListener('input', () => {
-        els.btnEraseAll.disabled = !confirmMatches();
+        if (!erasing) els.btnEraseAll.disabled = !confirmMatches();
       });
 
       els.btnEraseAll.addEventListener('click', () => {
