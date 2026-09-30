@@ -31,6 +31,9 @@
  *  Sin publicar
  *    + [FEATURE] Portal en inglés, español y alemán: setLanguage() y
  *      setLanguageSwitcher(); /info informa lang y lang_switch
+ *    + [CHANGE] Idioma predeterminado AUTO: los navegadores que no están en
+ *      español ahora ven inglés; setLanguage(ES) mantiene el portal en español
+ *    + [CHANGE] La respuesta 405 ahora es "Method not allowed"
  *
  *  v2.3.3 (2026-10-01)
  *    + [FIX] El escaneo del portal vuelve a listar redes en Arduino-ESP32
