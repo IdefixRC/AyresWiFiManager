@@ -39,6 +39,7 @@
       ".github",
       "test",
       "docs",
+      "tools",
       "extras",
       "src/main.cpp",
       "*.zip"
