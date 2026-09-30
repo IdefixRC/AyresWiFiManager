@@ -22,6 +22,15 @@ jobs:
     - name: Verify embedded portal assets
       run: python tools/check_portal_assets.py
 
+    - name: Verify portal translations
+      run: python tools/check_i18n.py
+
+    - name: Test portal tooling
+      run: |
+        python -m pip install pytest
+        python -m pytest tools/tests -q
+        node --test tools/tests/i18n_core.test.mjs
+
   build:
     runs-on: ubuntu-latest
     strategy:
