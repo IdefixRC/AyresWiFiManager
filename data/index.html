@@ -636,6 +636,13 @@
       color: #000;
     }
 
+    .password-hint {
+      margin: -4px 0 10px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: right;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .logo::after {
         animation: none !important;
@@ -710,8 +717,7 @@
           <div class="row">
             <label for="password" data-i18n="password_label">Password</label>
             <div class="password-wrapper">
-              <input id="password" class="input" name="password" type="password"
-                placeholder="Password (leave empty for open networks)" data-i18n-placeholder="password_placeholder" />
+              <input id="password" class="input" name="password" type="password" aria-describedby="password-hint" />
               <span class="eye-icon" id="toggle-password" title="Show/hide password" data-i18n-title="toggle_password_title">
                 <svg id="eye-open" viewBox="0 0 24 24" style="display: none;">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -726,6 +732,7 @@
               </span>
             </div>
           </div>
+          <div id="password-hint" class="hint password-hint" data-i18n="password_hint">Leave empty for open networks.</div>
 
 
           <div class="footer">
@@ -813,7 +820,7 @@
     "connect_heading": "Connect",
     "ssid_placeholder": "Network name",
     "password_label": "Password",
-    "password_placeholder": "Password (leave empty for open networks)",
+    "password_hint": "Leave empty for open networks.",
     "toggle_password_title": "Show/hide password",
     "save_button": "Save and connect",
     "saving": "Saving…",
@@ -860,7 +867,7 @@
     "connect_heading": "Conectar",
     "ssid_placeholder": "Nombre de la red",
     "password_label": "Contraseña",
-    "password_placeholder": "Contraseña (vacía para redes abiertas)",
+    "password_hint": "Dejala vacía para redes abiertas.",
     "toggle_password_title": "Mostrar/Ocultar contraseña",
     "save_button": "Guardar y conectar",
     "saving": "Guardando…",
@@ -907,7 +914,7 @@
     "connect_heading": "Verbinden",
     "ssid_placeholder": "Netzwerkname",
     "password_label": "Passwort",
-    "password_placeholder": "Passwort (bei offenen Netzwerken leer lassen)",
+    "password_hint": "Bei offenen Netzwerken leer lassen.",
     "toggle_password_title": "Passwort anzeigen/verbergen",
     "save_button": "Speichern und verbinden",
     "saving": "Wird gespeichert…",
