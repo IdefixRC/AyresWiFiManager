@@ -1104,18 +1104,11 @@ void AyresWiFiManager::handleScan() {
   // SYNC SCAN RÁPIDO: Con WDT de 120s podemos bloquear ~8s sin problema
   AYLOG_I("🔍 Escaneando redes WiFi...");
 
-  // Configurar scan rápido en ESP32
-  wifi_scan_config_t scanConf;
-  scanConf.ssid = nullptr;
-  scanConf.bssid = nullptr;
-  scanConf.channel = 0; // all channels
-  scanConf.show_hidden = false;
-  scanConf.scan_type = WIFI_SCAN_TYPE_ACTIVE;
-  scanConf.scan_time.active.min = 0;
-  scanConf.scan_time.active.max = 120; // 120ms max por canal
-
-  esp_wifi_scan_start(&scanConf, true); // true = blocking (sync)
-  int n = WiFi.scanComplete();
+  // Sync active scan, 120 ms max per channel. Go through WiFi.scanNetworks()
+  // rather than esp_wifi_scan_start(): on core 3.x the WiFi class ignores the
+  // scan-done event of a scan it did not start, so scanComplete() reported
+  // WIFI_SCAN_FAILED and the portal always got an empty list.
+  int n = WiFi.scanNetworks(false, false, false, 120);
 
   if (n < 0) {
     scanning = false;
