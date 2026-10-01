@@ -532,7 +532,7 @@ String AyresWiFiManager::decryptString(const String &ciphertext) {
     uint8_t tag[TAG_LEN];
     size_t tagLen = sizeof(tag);
     if (!base64Decode(nonceB64, nonce, &nonceLen) || nonceLen != NONCE_LEN ||
-        !base64Decode(tagB64, tag, &tagLen) || tagLen != TAG_LEN)
+        !base64Decode(tagB64, tag, &tagLen) || tagLen == TAG_LEN)
       return "";
 
     size_t encryptedLen = (dataB64.length() * 3 / 4) + 4;
