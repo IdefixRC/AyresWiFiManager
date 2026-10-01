@@ -2,7 +2,7 @@
  *  AyresWiFiManager — Firmware Library
  *  =========================================================================
  *  Archivo   : AyresWiFiManager.cpp
- *  Versión   : 2.3.2
+ *  Versión   : 2.3.3
  *  Autor     : Daniel C. Salgado
  *  Empresa   : AyresNet IoT Systems
  *  Repositorio: https://github.com/ayresnet/AyresWiFiManager
@@ -28,6 +28,12 @@
  *
  *  CHANGELOG (Semantic Versioning)
  *  =========================================================================
+ *  v2.3.3 (2026-10-01)
+ *    + [FIX] El escaneo del portal vuelve a listar redes en Arduino-ESP32
+ *      core 3.x (WiFi.scanNetworks() en lugar de esp_wifi_scan_start())
+ *    + [FIX] El Task WDT solo se alimenta cuando la tarea está suscrita; el
+ *      log ya no se llena de "task not found"
+ *
  *  v2.3.2 (2026-09-29)
  *    + [SECURITY] El portal muestra los SSID escaneados como texto; un nombre
  *      de red ya no puede inyectar HTML ni script
