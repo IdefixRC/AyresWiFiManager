@@ -2,7 +2,7 @@
  *  AyresWiFiManager — Firmware Library
  *  =========================================================================
  *  Archivo   : AyresWiFiManager.cpp
- *  Versión   : 2.3.3
+ *  Versión   : 2.4.0
  *  Autor     : Daniel C. Salgado
  *  Empresa   : AyresNet IoT Systems
  *  Repositorio: https://github.com/ayresnet/AyresWiFiManager
@@ -28,7 +28,7 @@
  *
  *  CHANGELOG (Semantic Versioning)
  *  =========================================================================
- *  Sin publicar
+ *  v2.4.0 (2026-10-01)
  *    + [FEATURE] Portal en inglés, español y alemán: setLanguage() y
  *      setLanguageSwitcher(); /info informa lang y lang_switch
  *    + [CHANGE] Idioma predeterminado AUTO: los navegadores que no están en

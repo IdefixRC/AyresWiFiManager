@@ -146,7 +146,7 @@
  *
  *  CHANGELOG (Semantic Versioning)
  *  ---------------------------------------------------------------------------
- *  Unreleased          Portal in English, Spanish and German: setLanguage(),
+ *  2.4.0  (2026-10-01) Portal in English, Spanish and German: setLanguage(),
  *                      setLanguageSwitcher(), /info lang and lang_switch.
  *                      Default AUTO: non-Spanish browsers now get English;
  *                      setLanguage(ES) keeps the old Spanish-only portal.
@@ -176,10 +176,10 @@
 #define AYRES_WIFI_MANAGER_H
 
 // ===== Versioning (public) =====
-#define AWM_VERSION "2.3.3"
+#define AWM_VERSION "2.4.0"
 #define AWM_VERSION_MAJOR 2
-#define AWM_VERSION_MINOR 3
-#define AWM_VERSION_PATCH 3
+#define AWM_VERSION_MINOR 4
+#define AWM_VERSION_PATCH 0
 
 #include <Arduino.h>
 
