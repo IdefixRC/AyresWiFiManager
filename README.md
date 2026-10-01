@@ -1,6 +1,6 @@
 # AyresWiFiManager
 
-[![Version](https://img.shields.io/badge/version-2.3.2-4361ee)](https://github.com/ayresnet/AyresWiFiManager)
+[![Version](https://img.shields.io/badge/version-2.3.3-4361ee)](https://github.com/ayresnet/AyresWiFiManager)
 [![Platform](https://img.shields.io/badge/platform-ESP32-2ec27e?logo=espressif)](https://www.espressif.com/en/products/socs/esp32)
 [![Arduino](https://img.shields.io/badge/framework-Arduino-00979d?logo=arduino)](https://www.arduino.cc/)
 [![License](https://img.shields.io/badge/license-MIT-6c757d)](LICENSE)
@@ -25,14 +25,14 @@ AyresWiFiManager (AWM) is an ESP32 library for Wi-Fi provisioning and connectivi
 
 ## Compatibility
 
-Version 2.3.2 officially supports:
+Version 2.3.3 officially supports:
 
 - ESP32 using the Arduino framework.
 - Arduino-ESP32 core 2.x and 3.x.
 - ArduinoJson 6.21.2 or newer within major version 6.
 - LittleFS, DNSServer, WebServer and HTTPClient from the ESP32 Arduino core.
 
-Version 2.3.2 supports ESP32 exclusively.
+Version 2.3.3 supports ESP32 exclusively.
 
 ## Installation
 

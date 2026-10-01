@@ -143,6 +143,9 @@
  *
  *  CHANGELOG (Semantic Versioning)
  *  ---------------------------------------------------------------------------
+ *  2.3.3  (2026-10-01) Portal scan lists networks again on Arduino-ESP32 core
+ *                      3.x; the Task WDT is fed only once subscribed, so the
+ *                      log no longer floods with "task not found".
  *  2.3.2  (2026-09-29) Security: the portal shows scanned SSIDs as text, so a
  *                      network name can no longer inject HTML or script.
  *  2.3.1  (2026-09-28) MAC-based device naming helpers; Task WDT uses the
@@ -165,10 +168,10 @@
 #define AYRES_WIFI_MANAGER_H
 
 // ===== Versioning (public) =====
-#define AWM_VERSION "2.3.2"
+#define AWM_VERSION "2.3.3"
 #define AWM_VERSION_MAJOR 2
 #define AWM_VERSION_MINOR 3
-#define AWM_VERSION_PATCH 2
+#define AWM_VERSION_PATCH 3
 
 #include <Arduino.h>
 
