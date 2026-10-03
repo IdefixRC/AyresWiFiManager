@@ -249,6 +249,17 @@ public:
   // Portal language. AUTO follows the browser and falls back to English.
   enum class Language : uint8_t { AUTO, EN, ES, DE };
 
+  // Time sync status. Describes the system clock: SYNCED whenever it is valid,
+  // whoever set it.
+  enum class TimeSyncStatus : uint8_t {
+    IDLE,    // not started (no connection yet, or Wi-Fi dropped mid-sync) or
+             // disabled
+    SYNCING, // clock not valid yet; AWM is trying (NTP rounds, HTTP fallback)
+    SYNCED,  // clock is valid
+    FAILED   // AWM gave up for this connection; SNTP keeps retrying in the
+             // background, so this can still become SYNCED
+  };
+
   // ---------- ctor ----------
   AyresWiFiManager(uint8_t ledPin = 2, uint8_t buttonPin = 0);
 
@@ -312,6 +323,22 @@ public:
   static const char *errorToString(Error error);
   uint32_t getReconnectCount() const;
   uint32_t getLastInternetCheck() const;
+
+  // ---------- time sync ----------
+  // Default for setTimeSyncWait(): run() waits until the sync succeeds or
+  // gives up, as before 2.5.0.
+  static constexpr uint32_t TIME_SYNC_WAIT_FULL = UINT32_MAX;
+  // On by default. false: AWM never starts SNTP and never touches the clock
+  // or TZ. Call before run().
+  void setTimeSync(bool enabled);
+  bool isTimeSyncEnabled() const;
+  // How long run() waits for the time after connecting. 0 = don't wait; the
+  // sync carries on in update().
+  void setTimeSyncWait(uint32_t ms);
+  // true once the system clock is valid (2017 or later), whoever set it.
+  bool isTimeSynced() const;
+  TimeSyncStatus getTimeSyncStatus() const;
+  static const char *timeSyncStatusToString(TimeSyncStatus status);
 
   // ---------- utilidades extra ----------
   bool scanRedDetectada();
@@ -381,8 +408,18 @@ private:
   void eraseJsonInDir(const char *path, bool respectProtected,
                       EraseResult &result);
 
-  // ---------- NTP ----------
-  void sincronizarHoraNTP();
+  // ---------- time sync ----------
+  enum class TsPhase : uint8_t { IDLE, NTP, HTTP, DONE, FAILED };
+  void startTimeSync();
+  void pollTimeSync();
+  void startHttpFallback();
+  void waitForTimeSync();
+  TsPhase _tsPhase = TsPhase::IDLE;
+  uint8_t _tsRound = 0;       // NTP round 0..2
+  uint32_t _tsRoundStart = 0; // AWM_now_ms() when the round started
+  bool _tsLinkUp = false;     // Wi-Fi state last seen by update()
+  bool _tsEnabled = true;
+  uint32_t _tsWaitMs = TIME_SYNC_WAIT_FULL;
 
   // ---------- LED FSM ----------
   void ledAutoUpdate();
