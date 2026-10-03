@@ -143,6 +143,7 @@ The ESP32 has no battery-backed clock, so every boot starts in 1970. After each 
 - `getTimeSyncStatus()` returns `IDLE`, `SYNCING`, `SYNCED` or `FAILED`. `FAILED` means AWM gave up for this connection; SNTP keeps retrying in the background, so it can still become `SYNCED`.
 - AWM keeps your timezone. Set `TZ` before `run()` and `localtime()` keeps returning local time after every sync. Without `TZ`, the clock is UTC.
 - `setTimeSync(false)` turns all of this off, for applications that run their own NTP client. Call it before `run()`.
+- On Arduino-ESP32 core 2.x, the core's DNS lookup is not safe to run from two tasks at once. While the HTTP fallback runs (only when NTP fails, for up to about 15 seconds), a DNS lookup in your `loop()` may wait or, rarely, fail; retry it. Core 3.x is not affected.
 
 ```cpp
 void setup() {
@@ -164,7 +165,7 @@ void loop() {
 }
 ```
 
-**Upgrading from 2.4.x.** `run()` waits as before. Reconnects now re-sync the time reliably and never wait. AWM no longer forces the timezone to `UTC0`; if you never set `TZ`, nothing changes. `getTimestamp()` returns 0 until the clock reads 2017 or later. The `setBusyCallback()` callback is now also called while `run()` waits for the time.
+**Upgrading from 2.4.x.** `run()` waits as before. Reconnects now re-sync the time reliably and never wait. AWM no longer forces the timezone to `UTC0`; if you never set `TZ`, nothing changes. `getTimestamp()` returns 0 until the clock reads 2017 or later. The "Hora sincronizada" log line now shows local time when you set `TZ`. The `setBusyCallback()` callback is now also called while `run()` waits for the time.
 
 ## Connectivity checks, privacy and trust
 

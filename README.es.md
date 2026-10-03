@@ -143,6 +143,7 @@ El ESP32 no tiene un reloj con batería, así que cada arranque empieza en 1970.
 - `getTimeSyncStatus()` devuelve `IDLE`, `SYNCING`, `SYNCED` o `FAILED`. `FAILED` significa que AWM se rindió en esta conexión; SNTP sigue reintentando en segundo plano, así que todavía puede pasar a `SYNCED`.
 - AWM respeta tu zona horaria. Definí `TZ` antes de `run()` y `localtime()` sigue devolviendo la hora local después de cada sincronización. Sin `TZ`, el reloj está en UTC.
 - `setTimeSync(false)` desactiva todo esto, para aplicaciones que usan su propio cliente NTP. Llamalo antes de `run()`.
+- En Arduino-ESP32 core 2.x, la resolución DNS del core no es segura si se usa desde dos tareas a la vez. Mientras corre el respaldo HTTP (solo cuando NTP falla, hasta unos 15 segundos), una consulta DNS en tu `loop()` puede quedar esperando o, raramente, fallar; reintentala. El core 3.x no está afectado.
 
 ```cpp
 void setup() {
@@ -164,7 +165,7 @@ void loop() {
 }
 ```
 
-**Actualizar desde 2.4.x.** `run()` espera igual que antes. Las reconexiones ahora vuelven a sincronizar la hora de forma confiable y nunca esperan. AWM ya no fuerza la zona horaria a `UTC0`; si nunca definís `TZ`, nada cambia. `getTimestamp()` devuelve 0 hasta que el reloj marque 2017 o posterior. El callback de `setBusyCallback()` ahora también se llama mientras `run()` espera la hora.
+**Actualizar desde 2.4.x.** `run()` espera igual que antes. Las reconexiones ahora vuelven a sincronizar la hora de forma confiable y nunca esperan. AWM ya no fuerza la zona horaria a `UTC0`; si nunca definís `TZ`, nada cambia. `getTimestamp()` devuelve 0 hasta que el reloj marque 2017 o posterior. La línea de log "Hora sincronizada" ahora muestra la hora local si definís `TZ`. El callback de `setBusyCallback()` ahora también se llama mientras `run()` espera la hora.
 
 ## Comprobación de conectividad, privacidad y confianza
 
