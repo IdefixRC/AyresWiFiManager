@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: The original library (ayresnet/AyresWiFiManager)
+    url: https://github.com/ayresnet/AyresWiFiManager/issues
+    about: This is a fork. If the problem also happens with the original library, report it there as well.
+  - name: Documentation
+    url: https://github.com/IdefixRC/AyresWiFiManager#readme
+    about: Setup, compatibility, fallback policies, time sync and logging are covered in the README.
