@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest an idea for AyresWiFiManager.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Reports in English or Spanish are both welcome. / Puedes escribir en inglés o en español.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your idea related to a problem?
+      description: What's missing or awkward today? For example, "My app needs to ... but AWM ...".
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to happen?
+      description: Describe the feature or API you have in mind. A short code example of how you'd call it helps.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Other ways to solve it, or workarounds you use now.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Links, screenshots, or anything else that helps.

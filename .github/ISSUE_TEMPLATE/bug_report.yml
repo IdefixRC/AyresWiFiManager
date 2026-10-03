@@ -1,0 +1,152 @@
+name: Bug report
+description: Something in AyresWiFiManager doesn't work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Reports in English or Spanish are both welcome. / Puedes escribir en inglés o en español.
+
+        Please check the [README](https://github.com/IdefixRC/AyresWiFiManager#readme) first, especially **Compatibility** and the section for the feature you use.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How do we make it happen?
+      placeholder: |
+        1. Flash the sketch below with no saved credentials
+        2. Join the portal from a phone
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of AWM?
+      options:
+        - Captive portal / setup page
+        - Portal language
+        - Wi-Fi connect and reconnect
+        - Fallback policy
+        - Credential storage or encryption
+        - Time sync
+        - Button and LED
+        - Wi-Fi scan
+        - Connectivity state and diagnostics
+        - Build or compile
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: AWM version
+      description: The release you use, e.g. `2.5.0`, or the commit if you build from a branch.
+      placeholder: "2.5.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installed via
+      options:
+        - PlatformIO lib_deps (this fork's URL)
+        - Arduino IDE (library ZIP)
+        - Local copy or git clone
+    validations:
+      required: true
+
+  - type: dropdown
+    id: chip
+    attributes:
+      label: ESP32 chip
+      options:
+        - ESP32
+        - ESP32-S2
+        - ESP32-S3
+        - ESP32-C3
+        - ESP32-C6
+        - Other (please say which in the additional context)
+    validations:
+      required: true
+
+  - type: input
+    id: core
+    attributes:
+      label: Arduino-ESP32 core version
+      description: |
+        Many problems differ between core 2.x and 3.x, so the exact version matters.
+        Arduino IDE: Tools > Board > Boards Manager > esp32. PlatformIO: the `framework-arduinoespressif32` version in the build output.
+      placeholder: "3.3.11"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ide
+    attributes:
+      label: Build environment
+      options:
+        - PlatformIO
+        - Arduino IDE
+        - Other
+
+  - type: dropdown
+    id: policy
+    attributes:
+      label: Fallback policy in use
+      description: The policy set with `setFallbackPolicy()`. `NO_CREDENTIALS_ONLY` is the default.
+      options:
+        - NO_CREDENTIALS_ONLY (default)
+        - ON_FAIL
+        - SMART_RETRIES
+        - BUTTON_ONLY
+        - NEVER
+
+  - type: textarea
+    id: sketch
+    attributes:
+      label: Minimal sketch
+      description: The smallest code that shows the problem, at least your AWM setters and the `begin()`, `run()` and `update()` calls. Leave out passwords and API keys.
+      render: cpp
+
+  - type: textarea
+    id: serial-log
+    attributes:
+      label: Serial log
+      description: |
+        Build with logging on and reproduce the problem:
+        `-D AWM_ENABLE_LOG=1 -D AWM_LOG_LEVEL=4` (4 = debug; see README **Logging**).
+        AWM logs your network name (SSID). Remove it, and anything else you consider private such as IP addresses, before posting.
+      render: shell
+
+  - type: input
+    id: client
+    attributes:
+      label: Phone or browser used for the portal
+      description: Only needed for portal problems.
+      placeholder: "Android 15, Chrome"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else that might help, e.g. the board, the router, or whether it also happens with the original library.
