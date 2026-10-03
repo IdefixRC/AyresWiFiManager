@@ -28,6 +28,12 @@ setLanguage	KEYWORD2
 getLanguage	KEYWORD2
 setLanguageSwitcher	KEYWORD2
 isLanguageSwitcherEnabled	KEYWORD2
+setTimeSync	KEYWORD2
+isTimeSyncEnabled	KEYWORD2
+setTimeSyncWait	KEYWORD2
+isTimeSynced	KEYWORD2
+getTimeSyncStatus	KEYWORD2
+timeSyncStatusToString	KEYWORD2
 setFallbackPolicy	KEYWORD2
 setSmartRetries	KEYWORD2
 enableButtonPortal	KEYWORD2
@@ -61,3 +67,4 @@ AWM_VERSION_PATCH	LITERAL1
 FallbackPolicy	KEYWORD1
 LedPattern	KEYWORD1
 Language	KEYWORD1
+TimeSyncStatus	KEYWORD1
