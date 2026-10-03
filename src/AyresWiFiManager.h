@@ -107,10 +107,14 @@
  *
  *  setTimeSync(bool)           → Time sync after each connection (default:
  *                                true). false leaves the clock and TZ alone.
+ *  isTimeSyncEnabled()         → true unless setTimeSync(false) was called.
  *  setTimeSyncWait(ms)         → How long run() waits for the time after
  *                                connecting (default: until done; 0 = none).
+ *  TIME_SYNC_WAIT_FULL         → setTimeSyncWait() value meaning "wait until
+ *                                the sync succeeds or gives up" (the default).
  *  isTimeSynced()              → true once the system clock is valid.
  *  getTimeSyncStatus()         → IDLE, SYNCING, SYNCED or FAILED.
+ *  timeSyncStatusToString(s)   → "IDLE", "SYNCING", "SYNCED" or "FAILED".
  *
  *  📌 HARDWARE UX
  *  --------------
@@ -267,8 +271,9 @@ public:
              // disabled
     SYNCING, // clock not valid yet; AWM is trying (NTP rounds, HTTP fallback)
     SYNCED,  // clock is valid
-    FAILED   // AWM gave up for this connection; SNTP keeps retrying in the
-             // background, so this can still become SYNCED
+    FAILED   // AWM gave up; stays until the next connection starts a new sync.
+             // SNTP keeps retrying in the background, so it can still become
+             // SYNCED
   };
 
   // ---------- ctor ----------
@@ -340,7 +345,9 @@ public:
   // gives up, as before 2.5.0.
   static constexpr uint32_t TIME_SYNC_WAIT_FULL = UINT32_MAX;
   // On by default. false: AWM never starts SNTP and never touches the clock
-  // or TZ. Call before run().
+  // or TZ. Call before run(). false after run() stops AWM from starting new
+  // syncs, but an SNTP session AWM already started keeps running. true at
+  // runtime starts a sync on the next update() if Wi-Fi is up.
   void setTimeSync(bool enabled);
   bool isTimeSyncEnabled() const;
   // How long run() waits for the time after connecting. 0 = don't wait; the
@@ -428,6 +435,7 @@ private:
   TsPhase _tsPhase = TsPhase::IDLE;
   uint8_t _tsRound = 0;       // NTP round 0..2
   uint32_t _tsRoundStart = 0; // AWM_now_ms() when the round started
+  uint32_t _tsHttpStart = 0;  // AWM_now_ms() when the HTTP phase started
   bool _tsLinkUp = false;     // Wi-Fi state last seen by update()
   bool _tsEnabled = true;
   uint32_t _tsWaitMs = TIME_SYNC_WAIT_FULL;

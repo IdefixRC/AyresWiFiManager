@@ -193,9 +193,14 @@ static bool AWM_syncTimeFromHttp_(const char *url, uint32_t timeoutMs = 6000) {
 // NTP rounds: same servers, order and timing as the old blocking sync.
 static constexpr uint32_t AWM_TS_ROUND_MS = 10000;
 static constexpr uint8_t AWM_TS_ROUNDS = 3;
-// Stack for the HTTP Date fallback task (plain HTTP, no TLS). Checked against
-// the high-water mark the task logs on the device test.
-static constexpr uint32_t AWM_TS_HTTP_STACK = 4096;
+// Stack for the HTTP Date fallback task (plain HTTP, no TLS). 8192 leaves
+// headroom: the minimum free stack was only measured on RISC-V (core 3.x),
+// Xtensa frames are larger, and each AYLOG call puts about 576 B of buffers on
+// the stack. The task logs its high-water mark for the device test.
+static constexpr uint32_t AWM_TS_HTTP_STACK = 8192;
+// Longest the HTTP phase may last. A server that trickles headers keeps
+// HTTPClient busy, so without a deadline the status would stay SYNCING.
+static constexpr uint32_t AWM_TS_HTTP_DEADLINE_MS = 60000;
 
 // Result of the HTTP Date fallback task. File-static so the task never
 // touches the manager object; at most one task runs at a time.
@@ -781,7 +786,7 @@ void AyresWiFiManager::run() {
     startTimeSync();
     waitForTimeSync();
     ledSet(LedPattern::ON);
-    connected = true;
+    connected = (WiFi.status() == WL_CONNECTED); // Wi-Fi may drop during the wait
     return;
   }
 
@@ -1699,10 +1704,18 @@ void AyresWiFiManager::forzarReconexion() {
 
 /* =================================== NTP / TIEMPO
  * =================================== */
+// Out-of-line definition so app code on core 2.x (gnu++11) can ODR-use the
+// constant (std::min, const&) and still link.
+#if __cplusplus < 201703L
+constexpr uint32_t AyresWiFiManager::TIME_SYNC_WAIT_FULL;
+#endif
+
 void AyresWiFiManager::setTimeSync(bool enabled) {
   _tsEnabled = enabled;
   if (!enabled)
     _tsPhase = TsPhase::IDLE;
+  else
+    _tsLinkUp = false; // the next update() starts a sync if Wi-Fi is up
 }
 bool AyresWiFiManager::isTimeSyncEnabled() const { return _tsEnabled; }
 void AyresWiFiManager::setTimeSyncWait(uint32_t ms) { _tsWaitMs = ms; }
@@ -1784,10 +1797,16 @@ void AyresWiFiManager::pollTimeSync() {
     const uint8_t result = s_tsHttpResult.load();
     if (result == AWM_TS_HTTP_OK) { // the task already logged the time
       _tsPhase = TsPhase::DONE;
-    } else if (AWM_clockValid_()) { // SNTP answered first
+    } else if (AWM_clockValid_()) { // clock already valid (SNTP, or the task
+                                    // just before it reported)
       AWM_logSyncedTime_();
       _tsPhase = TsPhase::DONE;
     } else if (result == AWM_TS_HTTP_FAILED) {
+      AYLOG_W("⚠️ No pude sincronizar hora (NTP/HTTP). Reintentaré luego.");
+      _tsPhase = TsPhase::FAILED;
+    } else if (AWM_now_ms() - _tsHttpStart >= AWM_TS_HTTP_DEADLINE_MS) {
+      // The task is still busy (e.g. a server trickling headers). Give up
+      // waiting; the RUNNING guard still prevents a second task.
       AYLOG_W("⚠️ No pude sincronizar hora (NTP/HTTP). Reintentaré luego.");
       _tsPhase = TsPhase::FAILED;
     }
@@ -1799,6 +1818,7 @@ void AyresWiFiManager::pollTimeSync() {
 // its result instead of starting a second one.
 void AyresWiFiManager::startHttpFallback() {
   _tsPhase = TsPhase::HTTP;
+  _tsHttpStart = AWM_now_ms();
   if (s_tsHttpResult.load() == AWM_TS_HTTP_RUNNING)
     return;
   s_tsHttpResult.store(AWM_TS_HTTP_RUNNING);
