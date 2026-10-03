@@ -153,6 +153,10 @@
  *
  *  CHANGELOG (Semantic Versioning)
  *  ---------------------------------------------------------------------------
+ *  2.5.0  (2026-10-03) Non-blocking time sync: run() waits as before by
+ *                      default (setTimeSyncWait() caps it), reconnects never
+ *                      wait; AWM keeps the app's timezone; setTimeSync(),
+ *                      isTimeSynced(), getTimeSyncStatus().
  *  2.4.0  (2026-10-01) Portal in English, Spanish and German: setLanguage(),
  *                      setLanguageSwitcher(), /info lang and lang_switch.
  *                      Default AUTO: non-Spanish browsers now get English;
@@ -183,9 +187,9 @@
 #define AYRES_WIFI_MANAGER_H
 
 // ===== Versioning (public) =====
-#define AWM_VERSION "2.4.0"
+#define AWM_VERSION "2.5.0"
 #define AWM_VERSION_MAJOR 2
-#define AWM_VERSION_MINOR 4
+#define AWM_VERSION_MINOR 5
 #define AWM_VERSION_PATCH 0
 
 #include <Arduino.h>

@@ -2,7 +2,7 @@
  *  AyresWiFiManager — Firmware Library
  *  =========================================================================
  *  Archivo   : AyresWiFiManager.cpp
- *  Versión   : 2.4.0
+ *  Versión   : 2.5.0
  *  Autor     : Daniel C. Salgado
  *  Empresa   : AyresNet IoT Systems
  *  Repositorio: https://github.com/ayresnet/AyresWiFiManager
@@ -28,6 +28,15 @@
  *
  *  CHANGELOG (Semantic Versioning)
  *  =========================================================================
+ *  v2.5.0 (2026-10-03)
+ *    + [FEATURE] Sincronización de hora no bloqueante: update() la avanza y
+ *      la reconexión nunca espera; run() espera como antes por defecto
+ *    + [FEATURE] setTimeSync(), setTimeSyncWait(), isTimeSynced() y
+ *      getTimeSyncStatus()
+ *    + [CHANGE] AWM ya no fuerza la zona horaria "UTC0"; respeta el TZ de
+ *      la aplicación
+ *    + [CHANGE] getTimestamp() devuelve 0 hasta que el reloj marque 2017
+ *
  *  v2.4.0 (2026-10-01)
  *    + [FEATURE] Portal en inglés, español y alemán: setLanguage() y
  *      setLanguageSwitcher(); /info informa lang y lang_switch
