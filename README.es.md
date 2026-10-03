@@ -73,6 +73,8 @@ void setup() {
   wifi.setAPCredentials("MiEquipo-Setup", "cambiar-clave");
   wifi.setLanguage(AyresWiFiManager::Language::AUTO);
   wifi.setLanguageSwitcher(true);
+  // run() espera la hora después de conectar; 0 = no esperar (ver Sincronización de hora)
+  wifi.setTimeSyncWait(AyresWiFiManager::TIME_SYNC_WAIT_FULL);
   wifi.setPortalTimeout(300);
   wifi.setAPClientCheck(true);
   wifi.setWebClientCheck(true);
@@ -111,6 +113,7 @@ AyresWiFiManager::State estado = wifi.getState();
 
 Serial.println(AyresWiFiManager::stateToString(estado));
 Serial.println(AyresWiFiManager::errorToString(wifi.getLastError()));
+Serial.println(AyresWiFiManager::timeSyncStatusToString(wifi.getTimeSyncStatus()));
 Serial.println(wifi.getReconnectCount());
 Serial.println(wifi.getLastInternetCheck());
 ```
@@ -124,7 +127,7 @@ Estados disponibles:
 - `NO_INTERNET`
 - `PORTAL_ACTIVE`
 
-`PORTAL_ACTIVE` tiene prioridad mientras el portal esté abierto, incluso en modo AP+STA. `INTERNET_OK` y `NO_INTERNET` se actualizan cuando se llama a `hayInternet()`. `getLastInternetCheck()` devuelve milisegundos desde el arranque.
+`PORTAL_ACTIVE` tiene prioridad mientras el portal esté abierto, incluso en modo AP+STA. `INTERNET_OK` y `NO_INTERNET` se actualizan cuando se llama a `hayInternet()`. `getLastInternetCheck()` devuelve milisegundos desde el arranque. La sincronización de hora tiene su propio estado, `getTimeSyncStatus()`; ver [Sincronización de hora](#sincronización-de-hora).
 
 ## Ciclo de vida
 
@@ -137,12 +140,12 @@ Estados disponibles:
 
 El ESP32 no tiene un reloj con batería, así que cada arranque empieza en 1970. Después de cada conexión, AWM inicia SNTP (`time.google.com`, `time.cloudflare.com`, `pool.ntp.org`) y cada 10 segundos rota a otros servidores, durante tres rondas. Si NTP no responde, usa como respaldo la cabecera HTTP `Date` (ver más abajo). La sincronización corre en segundo plano y la avanza `update()`; solo el respaldo HTTP usa una tarea propia de corta duración.
 
-- `run()` espera la hora después de la conexión inicial, como en versiones anteriores: hasta que la sincronización termina bien o se rinde (unos 45 segundos en el peor caso, sin internet). `setTimeSyncWait(ms)` limita esa espera y `setTimeSyncWait(0)` vuelve enseguida.
+- `run()` espera la hora después de la conexión inicial, como en versiones anteriores: hasta que la sincronización termina bien o se rinde (unos 45 segundos en el peor caso, sin internet). `setTimeSyncWait(ms)` limita esa espera y `setTimeSyncWait(0)` vuelve enseguida. El valor predeterminado es `AyresWiFiManager::TIME_SYNC_WAIT_FULL`.
 - Cada reconexión inicia una nueva sincronización, pero nunca espera.
 - `isTimeSynced()` devuelve `true` cuando el reloj del sistema es válido (2017 o posterior). Consultalo antes de cualquier cosa que necesite la hora real, como HTTPS con verificación de certificados.
-- `getTimeSyncStatus()` devuelve `IDLE`, `SYNCING`, `SYNCED` o `FAILED`. `FAILED` significa que AWM se rindió en esta conexión; SNTP sigue reintentando en segundo plano, así que todavía puede pasar a `SYNCED`.
+- `getTimeSyncStatus()` devuelve `IDLE`, `SYNCING`, `SYNCED` o `FAILED`. `FAILED` significa que AWM se rindió en esta conexión; SNTP sigue reintentando en segundo plano, así que todavía puede pasar a `SYNCED`. `timeSyncStatusToString()` convierte el estado en texto para los logs.
 - AWM respeta tu zona horaria. Definí `TZ` antes de `run()` y `localtime()` sigue devolviendo la hora local después de cada sincronización. Sin `TZ`, el reloj está en UTC.
-- `setTimeSync(false)` desactiva todo esto, para aplicaciones que usan su propio cliente NTP. Llamalo antes de `run()`.
+- `setTimeSync(false)` desactiva todo esto, para aplicaciones que usan su propio cliente NTP. Llamalo antes de `run()`. `isTimeSyncEnabled()` informa el ajuste.
 - En Arduino-ESP32 core 2.x, la resolución DNS del core no es segura si se usa desde dos tareas a la vez. Mientras corre el respaldo HTTP (solo cuando NTP falla, hasta unos 15 segundos), una consulta DNS en tu `loop()` puede quedar esperando o, raramente, fallar; reintentala. El core 3.x no está afectado.
 
 ```cpp

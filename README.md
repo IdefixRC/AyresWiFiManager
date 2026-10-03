@@ -73,6 +73,8 @@ void setup() {
   wifi.setAPCredentials("MyDevice-Setup", "change-me");
   wifi.setLanguage(AyresWiFiManager::Language::AUTO);
   wifi.setLanguageSwitcher(true);
+  // run() waits for the clock after connecting; 0 = don't wait (see Time sync)
+  wifi.setTimeSyncWait(AyresWiFiManager::TIME_SYNC_WAIT_FULL);
   wifi.setPortalTimeout(300);
   wifi.setAPClientCheck(true);
   wifi.setWebClientCheck(true);
@@ -111,6 +113,7 @@ AyresWiFiManager::State state = wifi.getState();
 
 Serial.println(AyresWiFiManager::stateToString(state));
 Serial.println(AyresWiFiManager::errorToString(wifi.getLastError()));
+Serial.println(AyresWiFiManager::timeSyncStatusToString(wifi.getTimeSyncStatus()));
 Serial.println(wifi.getReconnectCount());
 Serial.println(wifi.getLastInternetCheck());
 ```
@@ -124,7 +127,7 @@ Available states:
 - `NO_INTERNET`
 - `PORTAL_ACTIVE`
 
-`PORTAL_ACTIVE` takes precedence while the captive portal is open, including AP+STA operation. `INTERNET_OK` and `NO_INTERNET` are updated when `hayInternet()` runs. `getLastInternetCheck()` returns the last check time in milliseconds since boot.
+`PORTAL_ACTIVE` takes precedence while the captive portal is open, including AP+STA operation. `INTERNET_OK` and `NO_INTERNET` are updated when `hayInternet()` runs. `getLastInternetCheck()` returns the last check time in milliseconds since boot. The time sync has its own status, `getTimeSyncStatus()`; see [Time sync](#time-sync).
 
 ## Lifecycle
 
@@ -137,12 +140,12 @@ Available states:
 
 The ESP32 has no battery-backed clock, so every boot starts in 1970. After each connection, AWM starts SNTP (`time.google.com`, `time.cloudflare.com`, `pool.ntp.org`) and rotates to other servers every 10 seconds, for three rounds. If NTP doesn't answer, it falls back to the HTTP `Date` header (see below). The sync runs in the background and `update()` drives it; only the HTTP fallback uses a short-lived task of its own.
 
-- `run()` waits for the time after the initial connection, as in earlier versions: until the sync succeeds or gives up (about 45 seconds in the worst case, without internet). `setTimeSyncWait(ms)` caps that wait, and `setTimeSyncWait(0)` returns straight away.
+- `run()` waits for the time after the initial connection, as in earlier versions: until the sync succeeds or gives up (about 45 seconds in the worst case, without internet). `setTimeSyncWait(ms)` caps that wait, and `setTimeSyncWait(0)` returns straight away. The default is `AyresWiFiManager::TIME_SYNC_WAIT_FULL`.
 - Every reconnect starts a new sync, but never waits.
 - `isTimeSynced()` is `true` once the system clock is valid (2017 or later). Check it before anything that needs the real time, such as HTTPS with certificate checks.
-- `getTimeSyncStatus()` returns `IDLE`, `SYNCING`, `SYNCED` or `FAILED`. `FAILED` means AWM gave up for this connection; SNTP keeps retrying in the background, so it can still become `SYNCED`.
+- `getTimeSyncStatus()` returns `IDLE`, `SYNCING`, `SYNCED` or `FAILED`. `FAILED` means AWM gave up for this connection; SNTP keeps retrying in the background, so it can still become `SYNCED`. `timeSyncStatusToString()` turns the status into text for logs.
 - AWM keeps your timezone. Set `TZ` before `run()` and `localtime()` keeps returning local time after every sync. Without `TZ`, the clock is UTC.
-- `setTimeSync(false)` turns all of this off, for applications that run their own NTP client. Call it before `run()`.
+- `setTimeSync(false)` turns all of this off, for applications that run their own NTP client. Call it before `run()`. `isTimeSyncEnabled()` reports the setting.
 - On Arduino-ESP32 core 2.x, the core's DNS lookup is not safe to run from two tasks at once. While the HTTP fallback runs (only when NTP fails, for up to about 15 seconds), a DNS lookup in your `loop()` may wait or, rarely, fail; retry it. Core 3.x is not affected.
 
 ```cpp
