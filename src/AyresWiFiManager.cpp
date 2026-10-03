@@ -103,6 +103,7 @@
 #include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <atomic>
 #include <sys/time.h> // settimeofday (fallback HTTP Date)
 
 // mbedTLS for AES encryption
@@ -145,12 +146,6 @@ String AyresWiFiManager::getMacSuffix() {
 /* ============================== Helpers NTP/Fecha
  * =============================== */
 
-// Espera a que el tiempo esté disponible en ESP32.
-static bool AWM_waitLocalTime_(struct tm *ti, uint32_t timeoutMs) {
-  return getLocalTime(ti, timeoutMs);
-}
-
-
 // Fallback: sincroniza desde cabecera HTTP Date (sin TLS)
 static bool AWM_syncTimeFromHttp_(const char *url, uint32_t timeoutMs = 6000) {
   WiFiClient client;
@@ -182,6 +177,67 @@ static bool AWM_syncTimeFromHttp_(const char *url, uint32_t timeoutMs = 6000) {
   strftime(buf, sizeof(buf), "%a %b %d %H:%M:%S %Y", &ti);
   AYLOG_I("🕒 Hora desde HTTP: %s", buf);
   return true;
+}
+
+/* ====================== Time sync (non-blocking) ====================== */
+
+// NTP rounds: same servers, order and timing as the old blocking sync.
+static constexpr uint32_t AWM_TS_ROUND_MS = 10000;
+static constexpr uint8_t AWM_TS_ROUNDS = 3;
+// Stack for the HTTP Date fallback task (plain HTTP, no TLS). Checked against
+// the high-water mark the task logs on the device test.
+static constexpr uint32_t AWM_TS_HTTP_STACK = 4096;
+
+// Result of the HTTP Date fallback task. File-static so the task never
+// touches the manager object; at most one task runs at a time.
+enum : uint8_t {
+  AWM_TS_HTTP_NONE = 0,
+  AWM_TS_HTTP_RUNNING,
+  AWM_TS_HTTP_OK,
+  AWM_TS_HTTP_FAILED
+};
+static std::atomic<uint8_t> s_tsHttpResult{AWM_TS_HTTP_NONE};
+
+static inline bool AWM_clockValid_() {
+  return AWM_clockValid((int64_t)time(nullptr));
+}
+
+static void AWM_logSyncedTime_() {
+  time_t now = time(nullptr);
+  struct tm ti{};
+  localtime_r(&now, &ti);
+  char buf[32];
+  strftime(buf, sizeof(buf), "%a %b %d %H:%M:%S %Y", &ti);
+  AYLOG_I("🕒 Hora sincronizada: %s", buf);
+}
+
+// (Re)starts SNTP with these servers without changing the app's timezone.
+// configTzTime() always sets TZ, so hand it the current value, copied first
+// because setenv() may free the old string. Unset TZ means UTC: "UTC0".
+static void AWM_configureNtp_(const char *s1, const char *s2, const char *s3) {
+#ifdef AWM_DEBUG_NTP_UNREACHABLE
+  // Test builds only: names that never resolve (RFC 2606), so NTP always
+  // fails and the HTTP Date fallback runs.
+  s1 = s2 = s3 = "ntp.invalid";
+#endif
+  const char *cur = getenv("TZ");
+  const String tz = (cur && *cur) ? String(cur) : String("UTC0");
+  configTzTime(tz.c_str(), s1, s2, s3);
+}
+
+// Both fallback URLs, same order and timeouts as before. A separate function
+// so HTTPClient and String are destroyed before the task deletes itself.
+static bool AWM_runHttpFallback_() {
+  return AWM_syncTimeFromHttp_("http://google.com", 6000) ||
+         AWM_syncTimeFromHttp_("http://worldtimeapi.org/api/ip", 8000);
+}
+
+static void AWM_httpFallbackTask_(void *) {
+  const bool ok = AWM_runHttpFallback_();
+  AYLOG_I("🧵 Fallback HTTP: pila libre mínima %u bytes",
+          (unsigned)uxTaskGetStackHighWaterMark(nullptr));
+  s_tsHttpResult.store(ok ? AWM_TS_HTTP_OK : AWM_TS_HTTP_FAILED);
+  vTaskDelete(nullptr);
 }
 
 /* ============================ ctor / setters ============================ */
@@ -712,7 +768,9 @@ void AyresWiFiManager::run() {
   // Conectar si hay credenciales
   if (connectToWiFi()) {
     AYLOG_I("✅ Conexión WiFi exitosa.");
-    sincronizarHoraNTP();
+    _tsLinkUp = true; // update() must not start a second sync for this link
+    startTimeSync();
+    waitForTimeSync();
     ledSet(LedPattern::ON);
     connected = true;
     return;
@@ -771,6 +829,16 @@ void AyresWiFiManager::update() {
   else if (wifiConnected &&
            (_state == State::OFFLINE || _state == State::WIFI_CONNECTING))
     _state = State::WIFI_CONNECTED;
+
+  // Time sync: start on every Wi-Fi up edge, stop on a down edge, then poll.
+  if (wifiConnected && !_tsLinkUp) {
+    startTimeSync();
+  } else if (!wifiConnected && _tsLinkUp &&
+             (_tsPhase == TsPhase::NTP || _tsPhase == TsPhase::HTTP)) {
+    _tsPhase = TsPhase::IDLE;
+  }
+  _tsLinkUp = wifiConnected;
+  pollTimeSync();
 
   // Manejo de timeout del portal mediante esp_timer
   if (portalActive && portalTimeoutMs && _portalTimeoutExpired) {
@@ -1479,7 +1547,6 @@ void AyresWiFiManager::reintentarConexionSiNecesario() {
       _state = State::WIFI_CONNECTED;
       _lastError = Error::NONE;
       AYLOG_I("🔌 Conexión recuperada.");
-      sincronizarHoraNTP();
     }
     reState = RE_IDLE;
     return;
@@ -1542,7 +1609,6 @@ void AyresWiFiManager::reintentarConexionSiNecesario() {
     // 1. Verificar éxito
     if (WiFi.status() == WL_CONNECTED) {
       AYLOG_I("🔌 Reconectado a WiFi.");
-      sincronizarHoraNTP();
       connected = true;
       _state = State::WIFI_CONNECTED;
       _lastError = Error::NONE;
@@ -1624,58 +1690,144 @@ void AyresWiFiManager::forzarReconexion() {
 
 /* =================================== NTP / TIEMPO
  * =================================== */
-void AyresWiFiManager::sincronizarHoraNTP() {
-  if (WiFi.status() != WL_CONNECTED)
+void AyresWiFiManager::setTimeSync(bool enabled) {
+  _tsEnabled = enabled;
+  if (!enabled)
+    _tsPhase = TsPhase::IDLE;
+}
+bool AyresWiFiManager::isTimeSyncEnabled() const { return _tsEnabled; }
+void AyresWiFiManager::setTimeSyncWait(uint32_t ms) { _tsWaitMs = ms; }
+bool AyresWiFiManager::isTimeSynced() const { return AWM_clockValid_(); }
+
+AyresWiFiManager::TimeSyncStatus AyresWiFiManager::getTimeSyncStatus() const {
+  if (!_tsEnabled)
+    return TimeSyncStatus::IDLE;
+  if (AWM_clockValid_())
+    return TimeSyncStatus::SYNCED;
+  switch (_tsPhase) {
+  case TsPhase::NTP:
+  case TsPhase::HTTP:
+    return TimeSyncStatus::SYNCING;
+  case TsPhase::FAILED:
+    return TimeSyncStatus::FAILED;
+  default:
+    return TimeSyncStatus::IDLE;
+  }
+}
+
+const char *AyresWiFiManager::timeSyncStatusToString(TimeSyncStatus status) {
+  switch (status) {
+  case TimeSyncStatus::IDLE:
+    return "IDLE";
+  case TimeSyncStatus::SYNCING:
+    return "SYNCING";
+  case TimeSyncStatus::SYNCED:
+    return "SYNCED";
+  case TimeSyncStatus::FAILED:
+    return "FAILED";
+  }
+  return "UNKNOWN";
+}
+
+// Starts a sync after a connect. Never waits: pollTimeSync() drives it.
+void AyresWiFiManager::startTimeSync() {
+  if (!_tsEnabled || WiFi.status() != WL_CONNECTED)
     return;
-
-  // ⚙️ Timezone:
-  //  - "UTC0"  → UTC en logs (default)
-  //  - "<-03>3"→ Hora Argentina (sin DST)
-  const char *tz = "UTC0";
-  configTzTime(tz, "time.google.com", "time.cloudflare.com", "pool.ntp.org");
+  AWM_configureNtp_("time.google.com", "time.cloudflare.com", "pool.ntp.org");
   AYLOG_I("📡 Sincronizando hora (NTP)…");
+  if (AWM_clockValid_()) {
+    // Already set by an earlier sync; SNTP refreshes it in the background.
+    AWM_logSyncedTime_();
+    _tsPhase = TsPhase::DONE;
+    return;
+  }
+  _tsPhase = TsPhase::NTP;
+  _tsRound = 0;
+  _tsRoundStart = AWM_now_ms();
+}
 
-  struct tm ti{};
-  const uint32_t perTryMs = 10000; // 10 s por intento
-  const int maxTries = 3;          // total ~30 s
-
-  for (int i = 0; i < maxTries; ++i) {
-    if (AWM_waitLocalTime_(&ti, perTryMs)) {
-      char buf[32];
-      strftime(buf, sizeof(buf), "%a %b %d %H:%M:%S %Y", &ti);
-      AYLOG_I("🕒 Hora sincronizada: %s", buf);
-      // (Quitado) sntp_set_sync_interval(...) no está disponible en todos los
-      // cores.
+// One non-blocking step of the sync. Called from update() and run()'s wait.
+void AyresWiFiManager::pollTimeSync() {
+  if (_tsPhase == TsPhase::NTP) {
+    if (AWM_clockValid_()) {
+      AWM_logSyncedTime_();
+      _tsPhase = TsPhase::DONE;
       return;
     }
-    AYLOG_W("⏳ NTP intento %d/%d sin respuesta; reintentando…", i + 1,
-            maxTries);
-
-    // Rotamos servidores por si alguno está lento/bloqueado
-    switch (i) {
-    case 0:
-      configTzTime(tz, "pool.ntp.org", "time.nist.gov", "time.google.com");
-      break;
-    case 1:
-      configTzTime(tz, "time.cloudflare.com", "pool.ntp.org", "time.nist.gov");
-      break;
-    default:
-      break;
+    if (AWM_now_ms() - _tsRoundStart < AWM_TS_ROUND_MS)
+      return;
+    AYLOG_W("⏳ NTP intento %d/%d sin respuesta; reintentando…", _tsRound + 1,
+            AWM_TS_ROUNDS);
+    // Rotate servers in case one is slow or blocked (same order as before).
+    if (_tsRound == 0)
+      AWM_configureNtp_("pool.ntp.org", "time.nist.gov", "time.google.com");
+    else if (_tsRound == 1)
+      AWM_configureNtp_("time.cloudflare.com", "pool.ntp.org", "time.nist.gov");
+    if (++_tsRound < AWM_TS_ROUNDS) {
+      _tsRoundStart = AWM_now_ms();
+      return;
     }
-  }
-
-  // Fallback por HTTP Date si NTP no responde.
-  AYLOG_W("🌐 NTP lento/bloqueado; intento fallback por HTTP Date…");
-  if (AWM_syncTimeFromHttp_("http://google.com", 6000) ||
-      AWM_syncTimeFromHttp_("http://worldtimeapi.org/api/ip", 8000)) {
+    AYLOG_W("🌐 NTP lento/bloqueado; intento fallback por HTTP Date…");
+    startHttpFallback();
     return;
   }
-  AYLOG_W("⚠️ No pude sincronizar hora (NTP/HTTP). Reintentaré luego.");
+  if (_tsPhase == TsPhase::HTTP) {
+    const uint8_t result = s_tsHttpResult.load();
+    if (result == AWM_TS_HTTP_OK) { // the task already logged the time
+      _tsPhase = TsPhase::DONE;
+    } else if (AWM_clockValid_()) { // SNTP answered first
+      AWM_logSyncedTime_();
+      _tsPhase = TsPhase::DONE;
+    } else if (result == AWM_TS_HTTP_FAILED) {
+      AYLOG_W("⚠️ No pude sincronizar hora (NTP/HTTP). Reintentaré luego.");
+      _tsPhase = TsPhase::FAILED;
+    }
+  }
+}
+
+// Runs the HTTP Date fallback in its own short-lived task, because HTTPClient
+// can't do a non-blocking GET. If an earlier task is still running, wait for
+// its result instead of starting a second one.
+void AyresWiFiManager::startHttpFallback() {
+  _tsPhase = TsPhase::HTTP;
+  if (s_tsHttpResult.load() == AWM_TS_HTTP_RUNNING)
+    return;
+  s_tsHttpResult.store(AWM_TS_HTTP_RUNNING);
+  if (xTaskCreate(AWM_httpFallbackTask_, "awm_tsync", AWM_TS_HTTP_STACK,
+                  nullptr, 1, nullptr) != pdPASS) {
+    AYLOG_W("⚠️ No se pudo crear la tarea del fallback HTTP");
+    s_tsHttpResult.store(AWM_TS_HTTP_FAILED);
+  }
+}
+
+// run()'s wait for the time after the boot connect: up to _tsWaitMs, until
+// the sync ends, or until Wi-Fi drops. Keeps the LED, the watchdog and the
+// app's busy callback alive meanwhile.
+void AyresWiFiManager::waitForTimeSync() {
+  if (!_tsEnabled || _tsWaitMs == 0)
+    return;
+  const uint32_t t0 = AWM_now_ms();
+  while (_tsPhase == TsPhase::NTP || _tsPhase == TsPhase::HTTP) {
+    if (WiFi.status() != WL_CONNECTED) {
+      _tsPhase = TsPhase::IDLE;
+      _tsLinkUp = false; // update() restarts the sync on the next connect
+      return;
+    }
+    if (_tsWaitMs != TIME_SYNC_WAIT_FULL && AWM_now_ms() - t0 >= _tsWaitMs)
+      return;
+    pollTimeSync();
+    ledTask();
+    feedWatchdog();
+    if (_busyCallback)
+      _busyCallback();
+    AWM_sleep_ms(50);
+  }
 }
 
 uint64_t AyresWiFiManager::getTimestamp() {
-  time_t now = time(nullptr);
-  return (now > 100000) ? static_cast<uint64_t>(now) * 1000ULL : 0;
+  const time_t now = time(nullptr);
+  return AWM_clockValid((int64_t)now) ? static_cast<uint64_t>(now) * 1000ULL
+                                      : 0;
 }
 
 /* =============================== INTERNET CHECK
