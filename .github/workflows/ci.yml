@@ -31,6 +31,11 @@ jobs:
         python -m pytest tools/tests -q
         node --test tools/tests/i18n_core.test.mjs
 
+    - name: Test time helpers (host C++)
+      run: |
+        g++ -std=gnu++17 -Wall -Wextra -Werror tools/tests/test_http_date.cpp -o "$RUNNER_TEMP/test_http_date"
+        "$RUNNER_TEMP/test_http_date"
+
   build:
     runs-on: ubuntu-latest
     strategy:

@@ -92,6 +92,7 @@
 #include "AyresWiFiManager.h"
 #include "AWM_html_gz.h"
 #include "AyresLog.h"
+#include "AWM_time_util.h"
 #include <ArduinoJson.h>
 
 // Macros directas de AyresLog son usadas en el código, no hace falta mapeo
@@ -149,40 +150,6 @@ static bool AWM_waitLocalTime_(struct tm *ti, uint32_t timeoutMs) {
   return getLocalTime(ti, timeoutMs);
 }
 
-// Parsea "Sat, 27 Sep 2025 04:35:06 GMT" -> epoch (UTC)
-// Importante: asumimos TZ=UTC0 (ya seteado por sincronizarHoraNTP con
-// configTzTime)
-static bool AWM_parseHttpDate_(const String &date, time_t *outEpoch) {
-  if (!outEpoch || date.length() < 29)
-    return false;
-  char wdy[4] = {0}, mon[4] = {0}, tz[4] = {0};
-  int d = 0, y = 0, H = 0, M = 0, S = 0;
-  if (sscanf(date.c_str(), "%3s, %d %3s %d %d:%d:%d %3s", wdy, &d, mon, &y, &H,
-             &M, &S, tz) != 8)
-    return false;
-
-  const char *months = "JanFebMarAprMayJunJulAugSepOctNovDec";
-  const char *p = strstr(months, mon);
-  if (!p)
-    return false;
-  int monthIdx = (int)((p - months) / 3);
-
-  struct tm t = {};
-  t.tm_year = y - 1900;
-  t.tm_mon = monthIdx;
-  t.tm_mday = d;
-  t.tm_hour = H;
-  t.tm_min = M;
-  t.tm_sec = S;
-  t.tm_isdst = 0;
-
-  // Usamos mktime asumiendo TZ=UTC0 (equivalente a timegm en este contexto)
-  time_t epoch = mktime(&t);
-  if (epoch <= 0)
-    return false;
-  *outEpoch = epoch;
-  return true;
-}
 
 // Fallback: sincroniza desde cabecera HTTP Date (sin TLS)
 static bool AWM_syncTimeFromHttp_(const char *url, uint32_t timeoutMs = 6000) {
@@ -203,7 +170,7 @@ static bool AWM_syncTimeFromHttp_(const char *url, uint32_t timeoutMs = 6000) {
     return false;
 
   time_t epoch = 0;
-  if (!AWM_parseHttpDate_(date, &epoch))
+  if (!AWM_parseHttpDate(date.c_str(), &epoch))
     return false;
 
   struct timeval tv{.tv_sec = epoch, .tv_usec = 0};
