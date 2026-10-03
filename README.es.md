@@ -253,10 +253,10 @@ La página de configuración lee ambos ajustes de `/info` cada vez que se carga,
 
 Los pines predeterminados son GPIO 0 para el botón activo en LOW y GPIO 2 para el LED.
 
-El botón se lee solo mientras arranca `run()`: presionalo dentro de los primeros 3 segundos (por ejemplo, mantenelo apretado mientras el equipo arranca) y seguí manteniéndolo:
+El botón se lee solo mientras arranca `run()`: presionalo dentro de los primeros 3 segundos después de que empieza `run()` y seguí manteniéndolo. No lo mantengas apretado durante el encendido o un reset: en la mayoría de las placas ESP32 el botón BOOT es un pin de arranque (GPIO 0, o GPIO 9 en C3/C6), y mantenerlo en ese momento pone al chip en modo de descarga.
 
 - 2–5 segundos abre el portal. `enableButtonPortal(false)` lo desactiva.
-- 5 segundos o más borra las credenciales guardadas y reinicia.
+- 5 segundos o más borra las credenciales Wi-Fi guardadas (solo `/wifi.json`) y reinicia. Para borrar también tus otros archivos `.json`, usá el borrado total de la sección de recuperación del portal.
 
 Patrones del LED:
 

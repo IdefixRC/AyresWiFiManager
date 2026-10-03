@@ -257,10 +257,10 @@ The setup page reads both settings from `/info` each time it loads, so a later c
 
 Default pins are GPIO 0 for the active-low button and GPIO 2 for the LED.
 
-The button is read only while `run()` starts: press it within the first 3 seconds (for example, hold it while the device boots) and keep holding:
+The button is read only while `run()` starts: press it within the first 3 seconds after `run()` begins and keep holding. Don't hold it through a power-up or reset: the BOOT button is a strapping pin on most ESP32 boards (GPIO 0, or GPIO 9 on the C3/C6), and holding it then starts the chip's download mode instead.
 
 - 2–5 seconds opens the portal. `enableButtonPortal(false)` disables this.
-- 5 seconds or longer erases the stored credentials and restarts.
+- 5 seconds or longer erases the stored Wi-Fi credentials (`/wifi.json` only) and restarts. To also remove your other `.json` files, use the full erase in the portal's recovery section.
 
 LED patterns:
 
