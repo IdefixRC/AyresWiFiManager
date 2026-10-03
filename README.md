@@ -19,6 +19,7 @@ AyresWiFiManager (AWM) is an ESP32 library for Wi-Fi provisioning and connectivi
 - Portal in English, Spanish and German, with automatic browser language detection and an optional language menu.
 - Explicit fallback policies: `ON_FAIL`, `NO_CREDENTIALS_ONLY`, `SMART_RETRIES`, `BUTTON_ONLY` and `NEVER`.
 - Non-blocking reconnection driver with configurable backoff and attempt windows.
+- Background time sync (NTP with an HTTP `Date` fallback) that never blocks the loop and keeps your timezone.
 - Unified connectivity state and diagnostic information for application code.
 - Automatic LED patterns and boot-button actions.
 - Optional credential encryption at rest.
@@ -128,9 +129,42 @@ Available states:
 ## Lifecycle
 
 - `begin()` initializes GPIO, Wi-Fi and LittleFS, then loads stored credentials.
-- `run()` handles the boot-button window, performs the initial connection and applies the selected fallback policy.
-- `update()` serves HTTP and DNS requests, updates LED patterns and handles portal timeouts. Call it on every loop iteration.
+- `run()` handles the boot-button window, performs the initial connection, waits for the time (see [Time sync](#time-sync)) and applies the selected fallback policy.
+- `update()` serves HTTP and DNS requests, updates LED patterns, handles portal timeouts and drives the time sync. Call it on every loop iteration.
 - `reintentarConexionSiNecesario()` advances the non-blocking reconnection state machine.
+
+## Time sync
+
+The ESP32 has no battery-backed clock, so every boot starts in 1970. After each connection, AWM starts SNTP (`time.google.com`, `time.cloudflare.com`, `pool.ntp.org`) and rotates to other servers every 10 seconds, for three rounds. If NTP doesn't answer, it falls back to the HTTP `Date` header (see below). The sync runs in the background and `update()` drives it; only the HTTP fallback uses a short-lived task of its own.
+
+- `run()` waits for the time after the initial connection, as in earlier versions: until the sync succeeds or gives up (about 45 seconds in the worst case, without internet). `setTimeSyncWait(ms)` caps that wait, and `setTimeSyncWait(0)` returns straight away.
+- Every reconnect starts a new sync, but never waits.
+- `isTimeSynced()` is `true` once the system clock is valid (2017 or later). Check it before anything that needs the real time, such as HTTPS with certificate checks.
+- `getTimeSyncStatus()` returns `IDLE`, `SYNCING`, `SYNCED` or `FAILED`. `FAILED` means AWM gave up for this connection; SNTP keeps retrying in the background, so it can still become `SYNCED`.
+- AWM keeps your timezone. Set `TZ` before `run()` and `localtime()` keeps returning local time after every sync. Without `TZ`, the clock is UTC.
+- `setTimeSync(false)` turns all of this off, for applications that run their own NTP client. Call it before `run()`.
+
+```cpp
+void setup() {
+  setenv("TZ", "AEST-10", 1); // optional: your local timezone
+  tzset();
+
+  wifi.setTimeSyncWait(0);    // don't hold up setup() for the time
+  wifi.begin();
+  wifi.run();
+}
+
+void loop() {
+  wifi.update();
+  wifi.reintentarConexionSiNecesario();
+
+  if (wifi.isTimeSynced()) {
+    // the clock is real: HTTPS certificate checks and timestamps work
+  }
+}
+```
+
+**Upgrading from 2.4.x.** `run()` waits as before. Reconnects now re-sync the time reliably and never wait. AWM no longer forces the timezone to `UTC0`; if you never set `TZ`, nothing changes. `getTimestamp()` returns 0 until the clock reads 2017 or later. The `setBusyCallback()` callback is now also called while `run()` waits for the time.
 
 ## Connectivity checks, privacy and trust
 
@@ -289,7 +323,7 @@ Set `AWM_ENABLE_LOG=0` to compile logging out. Levels range from 1 (`ERROR`) to 
 data/          Source of the built-in portal pages
 examples/      Arduino and PlatformIO examples
 src/           Public headers, library implementation and the generated AWM_html_gz.h
-tools/         Checks for the built-in pages and their translations, with tests
+tools/         Checks for the built-in pages and their translations, and host tests
 .github/       Continuous integration
 ```
 

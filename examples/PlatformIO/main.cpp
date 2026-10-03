@@ -71,6 +71,10 @@ void setup() {
   // A long press on the configured button opens or resets the portal.
   wifiManager.enableButtonPortal(true);
 
+  // run() waits for the clock after connecting (default: until the sync ends).
+  // 0 returns at once; the sync carries on in update().
+  // wifiManager.setTimeSyncWait(0);
+
   // true encrypts /wifi.json; false stores it as plain text.
   wifiManager.setCredentialEncryption(true, "AyresNet2020WiFi");
 

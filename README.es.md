@@ -19,6 +19,7 @@ AyresWiFiManager (AWM) es una librería para provisionar y administrar la conect
 - Portal en inglés, español y alemán, con detección automática del idioma del navegador y un menú de idioma opcional.
 - Políticas explícitas: `ON_FAIL`, `NO_CREDENTIALS_ONLY`, `SMART_RETRIES`, `BUTTON_ONLY` y `NEVER`.
 - Reconexión no bloqueante con backoff y ventana de intento configurables.
+- Sincronización de hora en segundo plano (NTP con respaldo por la cabecera HTTP `Date`) que no bloquea el loop y respeta tu zona horaria.
 - Estado único de conectividad y datos de diagnóstico para cualquier proyecto.
 - Patrones automáticos de LED y acciones mediante botón físico.
 - Cifrado opcional de credenciales en reposo.
@@ -128,9 +129,42 @@ Estados disponibles:
 ## Ciclo de vida
 
 - `begin()` inicializa GPIO, Wi-Fi y LittleFS, y carga las credenciales.
-- `run()` procesa el botón durante el arranque, intenta conectar y aplica la política elegida.
-- `update()` atiende HTTP y DNS, actualiza el LED y controla el timeout del portal. Debe ejecutarse en cada vuelta del loop.
+- `run()` procesa el botón durante el arranque, intenta conectar, espera la hora (ver [Sincronización de hora](#sincronización-de-hora)) y aplica la política elegida.
+- `update()` atiende HTTP y DNS, actualiza el LED, controla el timeout del portal y avanza la sincronización de hora. Debe ejecutarse en cada vuelta del loop.
 - `reintentarConexionSiNecesario()` avanza la máquina de reconexión no bloqueante.
+
+## Sincronización de hora
+
+El ESP32 no tiene un reloj con batería, así que cada arranque empieza en 1970. Después de cada conexión, AWM inicia SNTP (`time.google.com`, `time.cloudflare.com`, `pool.ntp.org`) y cada 10 segundos rota a otros servidores, durante tres rondas. Si NTP no responde, usa como respaldo la cabecera HTTP `Date` (ver más abajo). La sincronización corre en segundo plano y la avanza `update()`; solo el respaldo HTTP usa una tarea propia de corta duración.
+
+- `run()` espera la hora después de la conexión inicial, como en versiones anteriores: hasta que la sincronización termina bien o se rinde (unos 45 segundos en el peor caso, sin internet). `setTimeSyncWait(ms)` limita esa espera y `setTimeSyncWait(0)` vuelve enseguida.
+- Cada reconexión inicia una nueva sincronización, pero nunca espera.
+- `isTimeSynced()` devuelve `true` cuando el reloj del sistema es válido (2017 o posterior). Consultalo antes de cualquier cosa que necesite la hora real, como HTTPS con verificación de certificados.
+- `getTimeSyncStatus()` devuelve `IDLE`, `SYNCING`, `SYNCED` o `FAILED`. `FAILED` significa que AWM se rindió en esta conexión; SNTP sigue reintentando en segundo plano, así que todavía puede pasar a `SYNCED`.
+- AWM respeta tu zona horaria. Definí `TZ` antes de `run()` y `localtime()` sigue devolviendo la hora local después de cada sincronización. Sin `TZ`, el reloj está en UTC.
+- `setTimeSync(false)` desactiva todo esto, para aplicaciones que usan su propio cliente NTP. Llamalo antes de `run()`.
+
+```cpp
+void setup() {
+  setenv("TZ", "<-03>3", 1); // opcional: tu zona horaria (acá, UTC-3)
+  tzset();
+
+  wifi.setTimeSyncWait(0);   // no demorar setup() esperando la hora
+  wifi.begin();
+  wifi.run();
+}
+
+void loop() {
+  wifi.update();
+  wifi.reintentarConexionSiNecesario();
+
+  if (wifi.isTimeSynced()) {
+    // el reloj es real: funcionan los certificados HTTPS y las marcas de tiempo
+  }
+}
+```
+
+**Actualizar desde 2.4.x.** `run()` espera igual que antes. Las reconexiones ahora vuelven a sincronizar la hora de forma confiable y nunca esperan. AWM ya no fuerza la zona horaria a `UTC0`; si nunca definís `TZ`, nada cambia. `getTimestamp()` devuelve 0 hasta que el reloj marque 2017 o posterior. El callback de `setBusyCallback()` ahora también se llama mientras `run()` espera la hora.
 
 ## Comprobación de conectividad, privacidad y confianza
 
@@ -283,7 +317,7 @@ Con `AWM_ENABLE_LOG=0` el logging se elimina al compilar. Los niveles van de 1 (
 data/          Fuente de las páginas integradas del portal
 examples/      Ejemplos para Arduino y PlatformIO
 src/           Headers públicos, implementación y el AWM_html_gz.h generado
-tools/         Comprobaciones de las páginas integradas y sus traducciones, con tests
+tools/         Comprobaciones de las páginas integradas y sus traducciones, y tests de host
 .github/       Integración continua
 ```
 

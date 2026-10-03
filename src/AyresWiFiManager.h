@@ -105,6 +105,13 @@
  * SSID/password válidos. scanRedDetectada()          → Escanea y devuelve true
  * si la red guardada está disponible.
  *
+ *  setTimeSync(bool)           → Time sync after each connection (default:
+ *                                true). false leaves the clock and TZ alone.
+ *  setTimeSyncWait(ms)         → How long run() waits for the time after
+ *                                connecting (default: until done; 0 = none).
+ *  isTimeSynced()              → true once the system clock is valid.
+ *  getTimeSyncStatus()         → IDLE, SYNCING, SYNCED or FAILED.
+ *
  *  📌 HARDWARE UX
  *  --------------
  *  setLedAuto(bool)            → Activa/desactiva gestión automática del LED
