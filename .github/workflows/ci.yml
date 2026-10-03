@@ -33,6 +33,7 @@ jobs:
 
     - name: Test time helpers (host C++)
       run: |
+        g++ -std=gnu++11 -Wall -Wextra -Werror -fsyntax-only tools/tests/test_http_date.cpp
         g++ -std=gnu++17 -Wall -Wextra -Werror tools/tests/test_http_date.cpp -o "$RUNNER_TEMP/test_http_date"
         "$RUNNER_TEMP/test_http_date"
 
